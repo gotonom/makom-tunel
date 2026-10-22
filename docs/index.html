@@ -923,9 +923,9 @@ function render(){
   $('cycBar').style.width = Math.min(100, s.t/128*100)+'%';
 
   const sc = $('statusChip');
-  const fault = !H && (SC.fan || SC.power);
+  const fault = !H && !!(SC.fan || SC.power);
   sc.classList.toggle('idle', H); sc.classList.toggle('fault', fault);
-  sc.classList.toggle('stopped', !H && !fault && (!running || SC.door));
+  sc.classList.toggle('stopped', !H && !fault && (!running || !!SC.door));
   setT('statusText', H ? 'BAĞLANTI BEKLENİYOR' : SC.power ? 'ŞEBEKE YOK • UPS DEVREDE' : SC.fan ? 'ARIZA • FAN DURDU'
     : SC.door && s.stage < 6 ? 'KAPI AÇIK • ETAP BEKLEMEDE' : (MAN.fan.on || MAN.damper.on) ? 'YARI OTOMATİK • MANUEL MÜDAHALE' : running ? 'OTOMATİK • FAN ÇALIŞIYOR' : 'OTOMATİK • FAN KAPALI');
   $('demoTag').hidden = H;
