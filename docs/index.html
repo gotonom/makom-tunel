@@ -1,0 +1,1099 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="MAKOM Faz 2 kompost tüneli otomasyon panosu ve simülasyonu. Created by GOTONOM.">
+<meta name="theme-color" content="#0a2463">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a2463'/%3E%3Cpath d='M7 23V9l9 8 9-8v14' fill='none' stroke='%23fff' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;-webkit-text-size-adjust:100%}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Makom Tünel Otomasyonu</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: control-room HMI — header bar, full-width process mimic, then KPI, command, recipe and cycle rows */
+:root{
+  --ground:#e8f0f9; --panel:#f6faff; --card:#ffffff; --line:#b7cfeb; --line-2:#d5e4f5;
+  --ink:#0a2463; --ink-2:#34507f; --muted:#6a7fa4; --tint:#eaf3fd;
+  --navy:#0d3b8c; --blue:#1b5fd9; --blue-2:#0b46b5; --flow:#2f7de8;
+  --duct-edge:#5f9fd8; --ok:#15803d; --warn:#d97706; --warn-bg:#fff4e5; --crit:#dc2626; --crit-bg:#fdecec;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-ui:"Barlow Semi Condensed","Segoe UI",Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--f-ui);font-size:15px}
+.wrap{max-width:1680px;margin:0 auto;padding-block:14px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:10px}
+.num{font-variant-numeric:tabular-nums}
+
+/* header */
+.top{display:flex;align-items:center;gap:14px 18px;flex-wrap:wrap;justify-content:space-between}
+.top h1{margin:0;font-family:var(--f-display);font-weight:800;font-size:clamp(26px,3.2vw,46px);letter-spacing:.01em;color:var(--ink);line-height:1;text-wrap:balance}
+.top h1 span{color:var(--blue);font-weight:600;margin:0 .15em}
+.brand{display:flex;flex-direction:column;gap:4px}
+.credit{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.credit b{color:var(--ink);font-weight:800;letter-spacing:.12em}
+.foot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted);padding-top:4px}
+.foot b{color:var(--ink);letter-spacing:.1em}
+.hchips{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+.chip{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:6px;background:var(--card);min-height:44px}
+.chip.pair .k{background:var(--blue);color:#fff;font-weight:700;font-size:14px;letter-spacing:.04em;padding:0 12px;align-self:stretch;display:flex;align-items:center;border-radius:4px 0 0 4px}
+.chip.pair .v{font-family:var(--f-display);font-weight:700;font-size:24px;color:var(--ink);width:70px;text-align:center;border:0;background:transparent;outline:none}
+.chip.pair input.v::placeholder{color:var(--ink)}
+.chip.pair input.v:focus{background:var(--tint)}
+.chip.status{gap:8px;padding:0 14px;background:#eef8ee;border-color:#a9d7b0;color:#14532d;font-weight:700;font-size:15px;letter-spacing:.02em}
+.chip.status svg{width:22px;height:22px}
+.chip.status.idle{background:var(--panel);border-color:var(--line);color:var(--muted)}
+.chip.status.stopped{background:var(--warn-bg);border-color:#f3c98b;color:#92400e}
+.chip.clock{flex-direction:column;justify-content:center;padding:2px 16px;line-height:1.05}
+.chip.clock small{font-size:12px;font-weight:700;color:var(--ink-2);letter-spacing:.06em}
+.chip.clock b{font-family:var(--f-display);font-size:24px}
+.chip.alarm{gap:8px;padding:0 14px;border-color:#f1a7a7;background:var(--crit-bg);color:var(--crit)}
+.chip.alarm svg{width:26px;height:26px}
+.chip.alarm div{display:flex;flex-direction:column;align-items:center;line-height:1.05}
+.chip.alarm small{font-size:12px;font-weight:700;letter-spacing:.06em}
+.chip.alarm b{font-family:var(--f-display);font-size:24px}
+.chip.alarm.on{background:var(--crit);border-color:var(--crit);color:#fff}
+.chip.alarm.on svg{animation:ring 1s ease-in-out infinite}
+@keyframes ring{0%,100%{transform:rotate(0)}25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}
+.chip.sound{gap:8px;padding:0 12px;font:700 14px var(--f-ui);letter-spacing:.03em;color:var(--ink);cursor:pointer}
+.chip.sound svg{width:20px;height:20px}
+.chip.sound:hover{border-color:var(--blue)}
+.chip.sound[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+.demo-tag{font-size:11px;font-weight:700;letter-spacing:.08em;color:#fff;background:var(--warn);border-radius:3px;padding:2px 6px;align-self:center}
+
+/* mimic */
+.mimic{background:linear-gradient(#fbfdff,#eef5fd);border:1.5px solid var(--line);border-radius:8px;overflow:hidden}
+.mimic-scroll{overflow-x:auto}
+#mimic{display:block;width:100%;min-width:980px;height:auto}
+#mimic text{font-family:var(--f-ui)}
+.sb-bg{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+.sb-hd{fill:var(--tint)}
+.sb-lb{font-weight:700;font-size:13px;fill:var(--ink);text-anchor:middle}
+.sb-v{font-family:var(--f-display)!important;font-weight:700;font-size:20px;fill:var(--ink);text-anchor:middle}
+.sb-v.big{font-size:30px}
+.sb-v .u{font-weight:600}
+.sbox.dark .sb-hd{fill:var(--navy)}
+.sbox.dark .sb-lb{fill:#fff;font-size:12.5px;letter-spacing:.02em}
+.sbox.dev .sb-bg{stroke:var(--warn);stroke-width:2.5}
+.sbox.dev .sb-hd{fill:var(--warn-bg)}
+.sbox.dev .sb-v{fill:var(--warn)}
+.bigcard rect.bc{fill:var(--card);stroke:var(--blue);stroke-width:2}
+.bc-lb{font-weight:700;font-size:15px;fill:var(--ink)}
+.bc-v{font-family:var(--f-display)!important;font-weight:700;font-size:32px;fill:var(--ink)}
+.bc-sub{font-size:12px;fill:var(--ink-2)}
+.tag-lbl{font-family:var(--f-display)!important;font-weight:700;font-size:21px;fill:var(--ink);letter-spacing:.02em}
+.duct{stroke:var(--duct-edge);stroke-width:1.5}
+.probe{stroke:#2b3442;stroke-width:3}
+.probe-tip{fill:#2b3442}
+.leader{stroke:#2b3442;stroke-width:1.5}
+.flow{fill:var(--flow);stroke:#fff;stroke-width:1.5;paint-order:stroke}
+.spig{stroke:var(--flow);stroke-width:3;fill:none}
+.spig-h{fill:var(--flow)}
+svg.running .flow,svg.running .spig-g{animation:flowp 1.6s ease-in-out infinite}
+svg:not(.running) .flow,svg:not(.running) .spig-g{opacity:.25}
+@keyframes flowp{0%,100%{opacity:.35}50%{opacity:1}}
+#rotor{transform-box:view-box;transform-origin:632px 414px;animation:spin .9s linear infinite}
+svg:not(.running) #rotor{animation-play-state:paused}
+@keyframes spin{to{transform:rotate(360deg)}}
+.blade{stroke:#1f2937;stroke-width:4;stroke-linecap:round;transition:transform .6s}
+
+/* compost input panel (inside the mimic) */
+.inpanel{display:flex;gap:12px;align-items:center;height:100%;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;padding:6px 10px;font-family:var(--f-ui);color:var(--ink)}
+.inpanel .ip-ic svg{width:44px;height:52px;display:block}
+.ip-body{flex:1;display:flex;flex-direction:column;gap:5px}
+.ip-title{font-family:var(--f-display);font-weight:700;font-size:20px;color:var(--blue-2);letter-spacing:.01em}
+.ip-title span{font-weight:600}
+.ip-fields{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+#in-ton::placeholder{color:var(--muted)}
+.ipf{display:flex;flex-direction:column;align-items:center;gap:2px;border-left:1.5px solid var(--line-2);padding-left:6px}
+.ipf:first-child{border-left:0;padding-left:0}
+.ipf>span{font-weight:600;font-size:14px}
+.ipv{display:flex;align-items:center;gap:4px;border:1.5px solid var(--line);background:var(--card);border-radius:4px;padding:0 8px;width:100%;height:30px}
+.ipv input{width:100%;min-width:0;border:0;outline:none;background:transparent;font:700 19px var(--f-display);color:var(--ink);text-align:right}
+.ipv input::placeholder{color:var(--ink)}
+.ipv i{font-style:normal;font:700 18px var(--f-display)}
+.ipv:focus-within{border-color:var(--blue);box-shadow:0 0 0 2px rgba(27,95,217,.18)}
+
+/* cards below */
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:8px}
+.row{display:grid;gap:10px}
+.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+.kpi{display:flex;align-items:center;gap:16px;padding:10px 16px}
+.kpi .ic{flex:none;width:92px;height:62px;display:grid;place-items:center;background:var(--tint);border-radius:6px}
+.kpi .ic svg{width:40px;height:40px}
+.kpi .tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi .lb{font-weight:700;font-size:15px;letter-spacing:.02em}
+.kpi .vl{font-family:var(--f-display);font-weight:700;font-size:34px;line-height:1}
+.kpi .vl small{font-size:.85em;font-weight:700}
+.kpi .sub{font-size:13px;color:var(--ink-2);line-height:1.25}
+
+.cmds{grid-template-columns:1.2fr 1.2fr 1fr}
+.cmd{display:flex;align-items:center;gap:14px;padding:8px 16px}
+.cmd>svg{flex:none;width:30px;height:46px}
+.cmd .tx{flex:1;min-width:0}
+.cmd .tt{font-weight:700;font-size:15px;margin-bottom:4px}
+.cmd .fl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--ink-2);font-size:14px}
+.cmd .fl .sep{width:1.5px;height:22px;background:var(--line)}
+.vbox{border:1.5px solid var(--line);border-radius:4px;padding:1px 12px;min-width:96px;text-align:center;font:700 19px var(--f-display);color:var(--ink);background:var(--card)}
+.devnote{display:flex;align-items:center;gap:12px;padding:8px 16px;font-size:14px;color:var(--ink-2)}
+.devnote svg{flex:none;width:40px;height:36px}
+.devnote b{color:var(--ink)}
+.devnote.on{background:var(--warn-bg);border-color:var(--warn)}
+.devnote.on b{color:#92400e}
+
+.summary{display:flex;align-items:center;gap:14px 26px;padding:6px 16px;flex-wrap:wrap}
+.summary .st{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;margin-right:auto}
+.summary .st svg{width:50px;height:28px}
+.summary .it{display:flex;align-items:center;gap:10px;font-weight:600;color:var(--ink-2)}
+.summary .it svg{width:18px;height:28px}
+.summary .it .dl{font:800 24px var(--f-display);color:var(--ink)}
+.summary .vbox{min-width:130px}
+.summary .sep{width:1.5px;height:24px;background:var(--line)}
+
+.recipe{padding:10px 14px 12px;display:flex;flex-direction:column;gap:8px}
+.recipe h2{margin:0;font-family:var(--f-display);font-weight:800;font-size:24px;letter-spacing:.01em}
+.recipe h2 span{color:var(--blue);font-weight:700;font-size:19px}
+.recipe h2 small{font-family:var(--f-ui);font-weight:500;font-size:14px;color:var(--ink-2)}
+.stages{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:22px}
+.stg{position:relative;display:flex;gap:10px;padding:10px 10px 12px;border:1.5px solid var(--line);border-radius:6px;background:var(--panel);min-height:96px}
+.stg:not(:last-child)::after{content:"";position:absolute;right:-19px;top:50%;width:16px;height:12px;transform:translateY(-50%);background:var(--blue);clip-path:polygon(0 40%,55% 40%,55% 0,100% 50%,55% 100%,55% 60%,0 60%)}
+.stg .no{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#4b5b73;color:#fff;font:700 20px var(--f-display);border:2.5px solid #d6deea}
+.stg .bd{min-width:0;display:flex;flex-direction:column;gap:1px}
+.stg .nm{font-family:var(--f-display);font-weight:700;font-size:17px;color:var(--blue-2);line-height:1.1}
+.stg .ln{font-size:13.5px;color:var(--ink-2);line-height:1.25}
+.stg .rs{margin-top:4px;font-size:12.5px;font-weight:700;color:var(--ok)}
+.stg.done .no{background:var(--ok);border-color:#bfe3c9}
+.stg.active{background:var(--blue);border-color:var(--blue-2);box-shadow:0 4px 14px rgba(27,95,217,.3)}
+.stg.active .no{background:#fff;color:var(--blue);border-color:#9ec0f5}
+.stg.active .nm,.stg.active .ln{color:#fff}
+.stg.active .rs{color:#dbe8ff}
+.stg .pb{position:absolute;left:10px;right:10px;bottom:5px;height:4px;border-radius:2px;background:rgba(255,255,255,.25);overflow:hidden}
+.stg .pb i{display:block;height:100%;background:#fff;width:0}
+
+.status-row{grid-template-columns:1fr 1.15fr .85fr 1.7fr}
+.sr{display:flex;align-items:center;gap:14px;padding:8px 16px;min-height:62px}
+.sr>svg{flex:none;width:34px;height:34px}
+.sr .tx{display:flex;flex-direction:column;min-width:0}
+.sr .lb{font-size:12.5px;font-weight:700;letter-spacing:.03em}
+.sr .vl{font:700 28px var(--f-display);line-height:1.05}
+.sr .sub{font-size:12.5px;color:var(--ink-2)}
+.sr.verify .vl{font-size:22px}
+.sr .cyc{margin-left:auto;text-align:right;font-size:13px;color:var(--ink-2);min-width:180px}
+.cbar{margin-top:5px;height:6px;border-radius:3px;background:var(--tint);border:1px solid var(--line-2);position:relative;overflow:hidden}
+.cbar i{position:absolute;inset:0 auto 0 0;background:var(--blue);width:0}
+.cbar b{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);left:85.9%}
+.ic-ok{color:var(--blue)}
+.ic-ok.met{color:var(--ok)}
+
+.demo{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding:8px 14px;font-size:14px;color:var(--ink-2);background:var(--panel);border-style:dashed}
+.demo b{color:var(--ink)}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:5px;overflow:hidden}
+.seg button,.btn{font:600 14px var(--f-ui);color:var(--ink);background:var(--card);border:0;padding:5px 11px;cursor:pointer}
+.seg button+button{border-left:1.5px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--blue);color:#fff}
+.btn{border:1.5px solid var(--line);border-radius:5px}
+.btn[aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:#fff}
+button:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.demo .sp{margin-left:auto}
+
+/* selectable stages */
+.stg{font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%;align-items:flex-start;transition:border-color .15s,transform .15s}
+.stg:hover{border-color:var(--blue);transform:translateY(-1px)}
+.stg .bd{flex:1}
+
+/* alarm states in the mimic */
+.sbox.alarm .sb-bg{stroke:var(--crit);stroke-width:2.5}
+.sbox.alarm .sb-hd{fill:var(--crit-bg)}
+.sbox.dark.alarm .sb-hd{fill:var(--crit)}
+.sbox.alarm .sb-v{fill:var(--crit)}
+.chip.status.fault{background:var(--crit-bg);border-color:#f1a7a7;color:var(--crit)}
+.chip.alarm{cursor:pointer}
+.chip.alarm.warnon{background:var(--warn);border-color:var(--warn);color:#fff}
+
+/* alarm scenarios */
+.alarms{padding:12px 14px 14px;display:flex;flex-direction:column;gap:10px;scroll-margin-top:12px}
+.al-head{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap}
+.al-head h2{margin:0;font:800 24px var(--f-display);letter-spacing:.01em}
+.al-head .hint{color:var(--ink-2);font-size:14px}
+.al-head .btn{margin-left:auto}
+.al-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px}
+.sc-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-content:start}
+.sc{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:8px 74px 8px 12px;border:1.5px solid var(--line);border-radius:6px;background:var(--panel);cursor:pointer;font:inherit;color:var(--ink)}
+.sc b{font-size:15px}
+.sc span{font-size:13px;color:var(--ink-2)}
+.sc .sev{position:absolute;top:9px;right:9px}
+.sc:hover{border-color:var(--blue)}
+.sc.crit[aria-pressed="true"]{border-color:var(--crit);background:var(--crit-bg);box-shadow:inset 0 0 0 1px var(--crit)}
+.sc.warn[aria-pressed="true"]{border-color:var(--warn);background:var(--warn-bg);box-shadow:inset 0 0 0 1px var(--warn)}
+.sev{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:3px;color:#fff;background:var(--warn);white-space:nowrap}
+.sev.crit{background:var(--crit)}
+.al-active{border:1.5px solid var(--line);border-radius:6px;background:var(--panel);padding:8px 12px 10px;min-width:0}
+.al-active h3{margin:0 0 8px;font:700 18px var(--f-display);display:flex;gap:8px;align-items:center}
+.aln{min-width:24px;text-align:center;background:var(--ink);color:#fff;border-radius:10px;font-size:14px;padding:0 7px}
+#alList{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+#alList li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;align-items:baseline;padding:7px 10px;border-radius:5px;background:var(--card);border:1px solid var(--line-2);border-left:4px solid var(--warn)}
+#alList li.crit{border-left-color:var(--crit);background:#fff8f8}
+#alList li b{font-size:14.5px}
+#alList li small{font-size:12px;color:var(--muted)}
+#alList li span{font-size:13px;color:var(--ink-2)}
+#alList li.none{display:block;border-left-color:var(--ok);color:var(--ok);font-weight:600}
+#alList li.info{border-left-color:var(--blue)}
+.sev.info{background:var(--blue)}
+
+/* manual override */
+.manual{padding:12px 14px 14px;display:flex;flex-direction:column;gap:10px;scroll-margin-top:12px}
+.mn-head{display:flex;gap:6px 14px;align-items:baseline;flex-wrap:wrap}
+.mn-head h2{margin:0;font:800 24px var(--f-display);letter-spacing:.01em}
+.mn-head .hint{color:var(--ink-2);font-size:14px}
+.mn-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mn{border:1.5px solid var(--line);border-radius:6px;background:var(--panel);padding:10px 12px;display:flex;flex-direction:column;gap:8px;transition:box-shadow .3s,border-color .2s}
+.mn.on{border-color:var(--warn);background:var(--warn-bg)}
+.mn.flash{box-shadow:0 0 0 4px rgba(27,95,217,.35)}
+.mn-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.mn-top b{font-size:15px}
+.mn .seg button[data-m="man"][aria-pressed="true"]{background:var(--warn)}
+.mn-ctl{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.mn-ctl input[type=range]{flex:1;min-width:140px;accent-color:var(--blue)}
+.mn.on input[type=range]{accent-color:var(--warn)}
+.ipv.sm{width:84px;height:32px;flex:none}
+.quick{display:inline-flex;gap:6px}
+.quick button{font:600 14px var(--f-ui);border:1.5px solid var(--line);border-radius:5px;background:var(--card);color:var(--ink);padding:4px 10px;cursor:pointer}
+.quick button:hover{border-color:var(--blue)}
+.mn-info{font-size:13px;color:var(--ink-2)}
+.sbox.man:not(.alarm) .sb-hd{fill:var(--warn)}
+.sbox.man:not(.alarm) .sb-bg{stroke:var(--warn);stroke-width:2.5}
+@media (max-width:860px){ .mn-grid,.al-grid{grid-template-columns:1fr} }
+@media (max-width:520px){ .sc-list{grid-template-columns:1fr} }
+
+.demo .sel{display:inline-flex;align-items:center;gap:6px}
+.demo select{font:600 14px var(--f-ui);color:var(--ink);border:1.5px solid var(--line);border-radius:5px;padding:4px 8px;background:var(--card)}
+.demo .msg{color:var(--ok);font-weight:600}
+
+@media (max-width:1200px){
+  .kpi .ic{width:64px}
+  .stages{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .stg:nth-child(4)::after{display:none}
+  .status-row{grid-template-columns:1fr 1fr}
+}
+@media (max-width:860px){
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cmds{grid-template-columns:1fr}
+  .stages{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .stg::after{display:none}
+  .summary .st{margin-right:0;width:100%}
+}
+@media (max-width:520px){
+  .kpis,.status-row,.stages{grid-template-columns:1fr}
+  .kpi .vl{font-size:30px}
+  .sr .cyc{margin-left:0;text-align:left}
+  .sr.verify{flex-wrap:wrap}
+}
+
+/* phones and small tablets: the diagram scrolls sideways, its numbers repeat in a readable grid,
+   and the manual compost inputs leave the diagram so they stay tappable */
+.inpanel-slot:empty,.mimic-hint,.msens{display:none}
+@media (max-width:900px){
+  #mimic{min-width:900px}
+  .mimic-hint{display:block;font-size:12.5px;font-weight:600;color:var(--muted);padding:8px 12px 0}
+  .msens{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px;padding:10px 12px 12px;border-top:1.5px solid var(--line-2)}
+  .ms{display:flex;flex-direction:column;gap:1px;background:var(--card);border:1.5px solid var(--line);border-radius:6px;padding:6px 10px;min-width:0}
+  .ms span{font-size:11.5px;font-weight:700;letter-spacing:.04em;color:var(--ink-2);overflow-wrap:anywhere}
+  .ms b{font:700 20px var(--f-display);color:var(--ink);font-variant-numeric:tabular-nums}
+  .ms.dev{border-color:var(--warn);background:var(--warn-bg)} .ms.dev b{color:var(--warn)}
+  .ms.alarm{border-color:var(--crit);background:var(--crit-bg)} .ms.alarm b{color:var(--crit)}
+  .ms.man{border-color:var(--warn)}
+  .inpanel-slot .inpanel{height:auto;align-items:flex-start;padding:10px 12px}
+  .inpanel-slot .inpanel .ip-ic svg{width:34px;height:40px}
+  .inpanel-slot .ip-fields{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .inpanel-slot .ipv{height:36px}
+  .inpanel-slot .ipv input{font-size:20px}
+}
+@media (max-width:640px){
+  .inpanel-slot .ip-fields{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:10px}
+  .inpanel-slot .ipf:nth-child(4){border-left:0;padding-left:0}
+  .inpanel-slot .inpanel .ip-ic{display:none}
+  .top{align-items:flex-start}
+  .hchips{display:grid;grid-template-columns:1fr 1fr;width:100%;gap:8px}
+  .hchips>*{min-width:0}
+  .chip.pair .k{font-size:12.5px;padding:0 8px}
+  .chip.pair .v{flex:1;width:auto;min-width:0}
+  .chip.status{grid-column:1/-1;justify-content:center;font-size:14px;white-space:normal;text-align:center;padding:6px 10px}
+  .demo-tag{justify-self:start}
+  .chip.sound{justify-content:center}
+  .chip.alarm{justify-content:center}
+  .summary .it{flex-wrap:wrap}
+  .summary .sep{display:none}
+  .demo .sp{margin-left:0}
+  .al-head .btn{margin-left:0}
+  .recipe h2 small{display:block;margin-top:2px}
+}
+@media (max-width:400px){
+  .inpanel-slot .ip-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .inpanel-slot .ipf:nth-child(odd){border-left:0;padding-left:0}
+  .inpanel-slot .ipf:nth-child(4){border-left:1.5px solid var(--line-2);padding-left:6px}
+  .kpi{padding:10px 12px;gap:12px}
+  .kpi .ic{width:52px;height:52px}
+  .cmd .fl .sep{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>MAKOM<span>|</span>FAZ 2 TÜNEL OTOMASYONU</h1>
+      <span class="credit">created by <b>GOTONOM</b></span>
+    </div>
+    <div class="hchips">
+      <div class="chip pair"><span class="k">TÜNEL NO</span><span class="v num">01</span></div>
+      <label class="chip pair"><span class="k">KOMPOST NO</span><input class="v num" id="kompostNo" placeholder="—" aria-label="Kompost numarası"></label>
+      <div class="chip status" id="statusChip">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.3 7.3 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.3 7.3 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.3 7.3 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.3 7.3 0 0 0 1.7-1l2.5 1 2-3.5zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg>
+        <span id="statusText">OTOMATİK • FAN ÇALIŞIYOR</span>
+      </div>
+      <span class="demo-tag" id="demoTag">DEMO VERİ</span>
+      <button type="button" class="chip sound" id="soundBtn" aria-pressed="false" title="Fan sesini aç/kapat">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span id="soundLbl">FAN SESİ</span>
+      </button>
+      <div class="chip clock"><small>SAAT</small><b class="num" id="clock">00:00:00</b></div>
+      <div class="chip alarm" id="alarmChip" title="" role="button" tabindex="0">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.4-2h-4.8a2.5 2.5 0 0 0 2.4 2zm7-6V11a7 7 0 0 0-5.5-6.8V3a1.5 1.5 0 0 0-3 0v1.2A7 7 0 0 0 5 11v5l-2 2v1h18v-1z"/></svg>
+        <div><small>ALARMLAR</small><b class="num" id="alarmCount">0</b></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="inpanel-slot" id="inpanelSlot"></div>
+
+  <section class="mimic" aria-label="Tünel proses şeması">
+    <div class="mimic-hint">Şemayı yana kaydırın · tüm ölçümler aşağıda</div>
+    <div class="mimic-scroll">
+      <svg id="mimic" class="running" viewBox="0 0 1640 482" role="img" aria-label="Taze hava, karışım hücresi, fan, tünel ve dönüş havası akış şeması">
+        <defs>
+          <linearGradient id="gH" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4faff"/><stop offset=".45" stop-color="#c6e3fb"/><stop offset="1" stop-color="#80b7e7"/></linearGradient>
+          <linearGradient id="gV" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f4faff"/><stop offset=".45" stop-color="#c6e3fb"/><stop offset="1" stop-color="#80b7e7"/></linearGradient>
+          <linearGradient id="gMetal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="1" stop-color="#c3ccd5"/></linearGradient>
+          <linearGradient id="gConc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d8d4ce"/><stop offset="1" stop-color="#aaa59e"/></linearGradient>
+          <linearGradient id="gPipe" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fafbfc"/><stop offset=".5" stop-color="#d5dbe1"/><stop offset="1" stop-color="#9aa5b0"/></linearGradient>
+          <radialGradient id="gFan" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#5b9bff"/><stop offset="1" stop-color="#1238a6"/></radialGradient>
+          <pattern id="pCompost" width="44" height="30" patternUnits="userSpaceOnUse"><rect width="44" height="30" fill="#6b3d1f"/><g id="compostDots"></g></pattern>
+        </defs>
+        <g id="gen"></g>
+        <foreignObject id="panelFO" x="8" y="6" width="580" height="92">
+          <div xmlns="http://www.w3.org/1999/xhtml" class="inpanel">
+            <div class="ip-ic"><svg viewBox="0 0 40 48" fill="none" stroke="#0a2463" stroke-width="3" aria-hidden="true"><rect x="3" y="6" width="34" height="39" rx="3"/><rect x="12" y="2" width="16" height="8" rx="2" fill="#f6faff"/><path d="M10 20h20M10 28h20M10 36h13"/></svg></div>
+            <div class="ip-body">
+              <div class="ip-title">KOMPOST GİRİŞ DEĞERLERİ <span>• MANUEL</span></div>
+              <div class="ip-fields">
+                <label class="ipf"><span>Nem</span><span class="ipv"><input id="in-nem" inputmode="decimal" placeholder="—" autocomplete="off"><i>%</i></span></label>
+                <label class="ipf"><span>Toplam N</span><span class="ipv"><input id="in-n" inputmode="decimal" placeholder="—" autocomplete="off"><i>%</i></span></label>
+                <label class="ipf"><span>pH</span><span class="ipv"><input id="in-ph" inputmode="decimal" placeholder="—" autocomplete="off"></span></label>
+                <label class="ipf"><span>Giriş ısısı</span><span class="ipv"><input id="in-isi" inputmode="decimal" placeholder="—" autocomplete="off"><i>°C</i></span></label>
+                <label class="ipf"><span>Tonaj</span><span class="ipv"><input id="in-ton" inputmode="decimal" placeholder="65" autocomplete="off"><i>t</i></span></label>
+              </div>
+            </div>
+          </div>
+        </foreignObject>
+      </svg>
+    </div>
+    <div class="msens" id="msens" aria-label="Anlık ölçümler"></div>
+  </section>
+
+  <div class="row kpis">
+    <div class="card kpi"><div class="ic"><svg viewBox="0 0 40 40" fill="none" stroke="#0a2463" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M4 14h20a5 5 0 1 0-5-5M4 21h28a5 5 0 1 1-5 5M4 28h12"/></svg></div><div class="tx"><span class="lb">HAVA DEBİSİ</span><span class="vl num"><span id="k-flow">—</span> <small>m³/h</small></span><span class="sub num" id="k-flow-sub"></span></div></div>
+    <div class="card kpi"><div class="ic"><svg viewBox="0 0 40 40" fill="none" stroke="#0a2463" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 12h18a5 5 0 1 0-5-5M2 19h30a5 5 0 1 1-5 5M8 26h14a4 4 0 1 1-4 4"/></svg></div><div class="tx"><span class="lb">KANAL HAVA HIZI</span><span class="vl num"><span id="k-vel">—</span> <small>m/s</small></span><span class="sub num" id="k-vel-sub"></span></div></div>
+    <div class="card kpi"><div class="ic"><svg viewBox="0 0 40 40" fill="#0a2463" aria-hidden="true"><path d="M23 3 9 23h9l-3 14 15-21h-9z"/></svg></div><div class="tx"><span class="lb">FAN GÜCÜ</span><span class="vl num"><span id="k-pow">—</span> <small>kW</small></span><span class="sub num" id="k-pow-sub"></span></div></div>
+    <div class="card kpi"><div class="ic"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="none" stroke="#0a2463" stroke-width="2.6" stroke-dasharray="80 10"/><path d="M22 8 12 22h7l-2 10 11-15h-7z" fill="#0a2463"/></svg></div><div class="tx"><span class="lb">TOPLAM FAN ENERJİSİ</span><span class="vl num"><span id="k-energy">—</span> <small>kWh</small></span><span class="sub num" id="k-energy-sub"></span></div></div>
+  </div>
+
+  <div class="row cmds">
+    <div class="card cmd">
+      <svg viewBox="0 0 24 40" fill="none" stroke="var(--blue)" stroke-width="2.4" aria-hidden="true"><path d="M8 25V6a4 4 0 0 1 8 0v19a7 7 0 1 1-8 0z"/><circle cx="12" cy="31" r="3.5" fill="var(--blue)"/><path d="M12 28V14"/></svg>
+      <div class="tx"><div class="tt">AIR INLET KOMUTU</div>
+        <div class="fl">Hedef <span class="vbox num"><span id="c-in-sp">—</span> °C</span><span class="sep"></span>Değişim <span class="vbox num"><span id="c-in-rt">± —</span> °C/saat</span></div></div>
+    </div>
+    <div class="card cmd">
+      <svg viewBox="0 0 24 40" fill="none" stroke="var(--blue)" stroke-width="2.4" aria-hidden="true"><path d="M8 25V6a4 4 0 0 1 8 0v19a7 7 0 1 1-8 0z"/><circle cx="12" cy="31" r="3.5" fill="var(--blue)"/><path d="M12 28V14"/></svg>
+      <div class="tx"><div class="tt">KOMPOST KOMUTU</div>
+        <div class="fl">Hedef <span class="vbox num"><span id="c-cp-sp">—</span> °C</span><span class="sep"></span>Değişim <span class="vbox num"><span id="c-cp-rt">± —</span> °C/saat</span></div></div>
+    </div>
+    <div class="card devnote" id="devNote">
+      <svg viewBox="0 0 40 36" aria-hidden="true"><path d="M20 3 37 33H3z" fill="none" stroke="var(--crit)" stroke-width="3" stroke-linejoin="round"/><path d="M20 13v10" stroke="var(--crit)" stroke-width="3.2" stroke-linecap="round"/><circle cx="20" cy="28" r="2" fill="var(--crit)"/></svg>
+      <div id="devText"><b>Sapmalı prob:</b> gerçek değer görünür, ortalamadan hariç</div>
+    </div>
+  </div>
+
+  <section class="card manual" id="manualPanel" aria-label="Manuel müdahale">
+    <div class="mn-head">
+      <h2>MANUEL MÜDAHALE</h2>
+      <span class="hint">Manuele aldığınız ekipman sizin değerinizle çalışır. Etap geçişleri, hedefler, alarmlar ve diğer ekipman otomatik devam eder.</span>
+    </div>
+    <div class="mn-grid">
+      <div class="mn" id="mn-fan">
+        <div class="mn-top"><b>FAN ÇALIŞMA ORANI</b>
+          <span class="seg mode"><button type="button" data-m="auto" aria-pressed="true">Otomatik</button><button type="button" data-m="man" aria-pressed="false">Manuel</button></span></div>
+        <div class="mn-ctl">
+          <input type="range" id="mn-fan-r" min="0" max="100" step="1" aria-label="Fan çalışma oranı">
+          <span class="ipv sm"><input id="mn-fan-n" inputmode="numeric" aria-label="Fan çalışma oranı yüzde"><i>%</i></span>
+          <span class="quick"><button type="button" data-v="0">%0</button><button type="button" data-v="50">%50</button><button type="button" data-v="100">%100</button></span>
+        </div>
+        <div class="mn-info num" id="mn-fan-info"></div>
+      </div>
+      <div class="mn" id="mn-damper">
+        <div class="mn-top"><b>TAZE HAVA DAMPERİ</b>
+          <span class="seg mode"><button type="button" data-m="auto" aria-pressed="true">Otomatik</button><button type="button" data-m="man" aria-pressed="false">Manuel</button></span></div>
+        <div class="mn-ctl">
+          <input type="range" id="mn-damper-r" min="0" max="100" step="1" aria-label="Taze hava damperi açıklığı">
+          <span class="ipv sm"><input id="mn-damper-n" inputmode="numeric" aria-label="Taze hava damperi yüzde"><i>%</i></span>
+          <span class="quick"><button type="button" data-v="0">%0</button><button type="button" data-v="50">%50</button><button type="button" data-v="100">%100</button></span>
+        </div>
+        <div class="mn-info num" id="mn-damper-info"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="card summary">
+    <div class="st"><svg viewBox="0 0 50 28" aria-hidden="true"><path d="M2 26 C10 8 18 4 25 3 C33 4 41 10 48 26Z" fill="#3a3a3a"/><path d="M12 20c3-2 6-1 8 0M28 14c3-1 5 0 7 2" stroke="#6b6b6b" stroke-width="2" fill="none"/></svg>KOMPOST SICAKLIK ÖZETİ</div>
+    <span class="sep"></span>
+    <div class="it"><svg viewBox="0 0 18 28" fill="none" stroke="var(--blue)" stroke-width="2" aria-hidden="true"><path d="M6 17V4a3 3 0 0 1 6 0v13a5 5 0 1 1-6 0z"/><circle cx="9" cy="21" r="2.5" fill="var(--blue)"/></svg>Minimum <span class="vbox num"><span id="s-min">—</span> °C</span></div>
+    <span class="sep"></span>
+    <div class="it"><svg viewBox="0 0 18 28" fill="none" stroke="var(--blue)" stroke-width="2" aria-hidden="true"><path d="M6 17V4a3 3 0 0 1 6 0v13a5 5 0 1 1-6 0z"/><circle cx="9" cy="21" r="2.5" fill="var(--blue)"/><path d="M9 19V8"/></svg>Maksimum <span class="vbox num"><span id="s-max">—</span> °C</span></div>
+    <span class="sep"></span>
+    <div class="it"><span class="dl">ΔT</span>Fark <span class="vbox num"><span id="s-dt">—</span> °C</span></div>
+  </div>
+
+  <section class="card recipe">
+    <h2>PROSES ETAPLARI <span>• TARİF</span> <small>(1 döngü) · simülasyonu başlatmak için bir etaba tıklayın</small></h2>
+    <div class="stages" id="stages"></div>
+  </section>
+
+  <div class="row status-row">
+    <div class="card sr">
+      <svg viewBox="0 0 24 24" fill="var(--ink)" aria-hidden="true"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.3 7.3 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.3 7.3 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.3 7.3 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.3 7.3 0 0 0 1.7-1l2.5 1 2-3.5zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg>
+      <div class="tx"><span class="lb">AKTİF ETAP</span><span class="vl" id="actStage">—</span></div>
+    </div>
+    <div class="card sr">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 6v6l4 2.5" stroke-linecap="round"/></svg>
+      <div class="tx"><span class="lb">DOLUMDAN BERİ GEÇEN SÜRE</span><span class="vl num" id="elapsed">—</span></div>
+    </div>
+    <div class="card sr">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="2" aria-hidden="true"><path d="M6 2h12M6 22h12M7 2c0 6 10 6 10 10S7 16 7 22M17 2c0 6-10 6-10 10s10 4 10 10" stroke-linejoin="round"/></svg>
+      <div class="tx"><span class="lb">ETAP SÜRESİ</span><span class="vl num" id="stageTime">—</span><span class="sub" id="stagePlan"></span></div>
+    </div>
+    <div class="card sr verify">
+      <svg class="ic-ok" id="verifyIc" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="m7 12.5 3.2 3.2L17 9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="tx"><span class="lb">GEÇİŞ DOĞRULAMASI</span><span class="vl num" id="verify">—</span><span class="sub" id="verifySub"></span></div>
+      <div class="cyc">Hedef toplam çevrim:<br>yaklaşık 110 saat • Maksimum: 128 saat
+        <div class="cbar" title="Çevrim ilerlemesi (128 saat ölçeğinde, çizgi 110 saat)"><i id="cycBar"></i><b></b></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="card alarms" id="alarmPanel" aria-label="Alarm senaryoları">
+    <div class="al-head">
+      <h2>ALARM SENARYOLARI</h2>
+      <span class="hint">Bir arıza seçin ve otomasyonun tepkisini izleyin. Birden fazla senaryo aynı anda açılabilir.</span>
+      <button type="button" class="btn" id="clearSc">Tümünü kaldır</button>
+    </div>
+    <div class="al-grid">
+      <div class="sc-list" id="scList"></div>
+      <div class="al-active">
+        <h3>AKTİF ALARMLAR <span class="aln num" id="alN">0</span></h3>
+        <ul id="alList"></ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="card demo" aria-label="Demo kontrolleri">
+    <span><b>Demo simülasyonu</b> · PLC bağlantısı kurulana kadar örnek veri</span>
+    <label class="sel">Etaptan başlat <select id="startSel"></select></label>
+    <span>Hız
+      <span class="seg" id="speedSeg">
+        <button type="button" data-s="1" aria-pressed="false">1×</button>
+        <button type="button" data-s="60" aria-pressed="true">60×</button>
+        <button type="button" data-s="600" aria-pressed="false">600×</button>
+        <button type="button" data-s="3600" aria-pressed="false">3600×</button>
+      </span>
+    </span>
+    <button type="button" class="btn" id="dataBtn" aria-pressed="false">Veriyi gizle</button>
+    <span class="msg" id="demoMsg" role="status"></span>
+    <button type="button" class="btn sp" id="resetBtn">Başa sar (1. etap)</button>
+  </div>
+
+  <footer class="foot"><span>MAKOM Kompost · Faz 2 Tünel Otomasyonu</span><span>Created by <b>GOTONOM</b></span></footer>
+</div>
+
+<script>
+(function(){
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
+const fmt = (v,d=1) => (v==null || !isFinite(v)) ? '—' : v.toLocaleString('tr-TR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtS = (v,d=1) => (v==null || !isFinite(v)) ? '± —' : (Math.abs(v) < 0.05 ? '±' : (v > 0 ? '+' : '−')) + fmt(Math.abs(v),d);
+const noise = () => (Math.random()+Math.random()+Math.random()-1.5)*1.15;
+function short(h){ const m=Math.max(0,Math.round(h*60)); return `${Math.floor(m/60)} sa ${m%60} dk`; }
+function long(h){ const m=Math.max(0,Math.round(h*60)), d=Math.floor(m/1440), hh=Math.floor((m%1440)/60), mm=m%60;
+  return d ? `${d} gün ${hh} saat ${mm} dk` : `${hh} saat ${mm} dk`; }
+
+/* ---------- recipe ---------- */
+const STAGES = [
+  {name:'LEVELING', lines:['8–12 saat','48,5 °C'], dur:[8,12], sp:48.5, ramp:0, fanBase:55, bio:.8, inlet:s=>s.spComp-3},
+  {name:'WARM UP', lines:['6–10 saat','+1,5 °C/saat','58,3–59 °C'], dur:[6,10], sp:58.6, ramp:1.5, fanBase:50, bio:1, inlet:s=>s.spComp-3.5},
+  {name:'PASTÖRİZASYON', lines:['8–10 saat','hedef 58,5 °C','58–59,8 °C','inlet 53–56 °C'], dur:[8,10], sp:58.5, ramp:0, fanBase:58, bio:1, inlet:()=>54.5},
+  {name:'COOL DOWN', lines:['7–10 saat','hedef 49,3 ±1 °C','ΔT max 5 °C'], dur:[7,10], sp:49.3, ramp:-1.4, fanBase:68, bio:.8, inlet:s=>s.spComp-4.5},
+  {name:'CONDITIONING', lines:['72–76 saat','49,3 ±1 °C','inlet 43–48 °C'], dur:[72,76], sp:49.3, ramp:0, fanBase:55, bio:.9, inlet:()=>45.5},
+  {name:'SON SOĞUTMA', lines:['hedef 8 saat • max 10 saat','yaklaşık 25 °C'], dur:[8,10], sp:25, ramp:-3.2, fanBase:85, bio:.4, inlet:s=>s.spComp-6},
+  {name:'TÜNEL BOŞALTMA & FAN KAPATMA', short:'TÜNEL BOŞALTMA', lines:[], dur:null, sp:null, ramp:0, fanBase:0, bio:.2, inlet:()=>null},
+];
+const PLAN = ['8–12 sa','6–10 sa','8–10 sa','7–10 sa','72–76 sa','hedef 8 • max 10 sa','—'];
+const RULE = [
+  'Min 8 sa ve ΔT ≤ 2,5 °C → Warm up',
+  'Ortalama ≥ 58,3 °C → Pastörizasyon',
+  '58–59,8 °C bandında 8 sa → Cool down',
+  'Min 7 sa ve ortalama ≤ 50,3 °C → Conditioning',
+  'Min 72 sa → Son soğutma',
+  'Min 8 sa ve ortalama ≤ 27 °C → Boşaltma',
+  'Fan kapalı, tünel boşaltılabilir'
+];
+
+/* ---------- mimic drawing ---------- */
+function sbox(x,y,w,h,label,id,o={}){
+  const lh = o.dark ? 21 : Math.round(h*0.44);
+  return `<g class="sbox${o.dark?' dark':''}" id="g-${id}">
+    <rect class="sb-bg" x="${x}" y="${y}" width="${w}" height="${h}" rx="5"/>
+    <path class="sb-hd" d="M${x+5},${y+.75}h${w-10}a4.25,4.25 0 0 1 4.25,4.25v${lh-5}h-${w-1.5}v-${lh-5}a4.25,4.25 0 0 1 4.25,-4.25z"/>
+    <text class="sb-lb" x="${x+w/2}" y="${y+lh/2+1}" dominant-baseline="middle">${label}</text>
+    <text class="sb-v${o.big?' big':''}" id="${id}" x="${x+w/2}" y="${y+lh+(h-lh)/2+2}" dominant-baseline="middle"></text>
+  </g>`;
+}
+function probe(x,y1,y2){ return `<line class="probe" x1="${x}" y1="${y1}" x2="${x}" y2="${y2-8}"/><rect class="probe-tip" x="${x-4}" y="${y2-10}" width="8" height="12" rx="3"/>`; }
+const ARW = 'M-16,-4H2V-10L16,0L2,10V4H-16Z';
+let arrowN = 0;
+function arrow(x,y,dir){ const r={r:0,l:180,d:90,u:-90}[dir]; return `<path class="flow" d="${ARW}" transform="translate(${x} ${y}) rotate(${r})" style="animation-delay:${(arrowN++%6)*0.22}s"/>`; }
+function damper(cx,cy,id){
+  return `<rect x="${cx-15}" y="${cy-28}" width="30" height="56" rx="2" fill="#5b6470" stroke="#2b3442" stroke-width="1.5"/>
+    <rect x="${cx-10}" y="${cy-22}" width="20" height="44" fill="#dfe8f1"/>
+    <line class="blade" id="${id}" x1="${cx}" y1="${cy-20}" x2="${cx}" y2="${cy+20}" transform="rotate(45 ${cx} ${cy})"/>
+    <rect x="${cx+4}" y="${cy-44}" width="20" height="16" rx="3" fill="#e8742a" stroke="#9a3f0c" stroke-width="1.2"/>
+    <line x1="${cx+8}" y1="${cy-28}" x2="${cx+8}" y2="${cy-24}" stroke="#2b3442" stroke-width="2"/>`;
+}
+let seed = 7; const rnd = () => (seed = (seed*16807) % 2147483647) / 2147483647;
+
+function buildMimic(){
+  // compost texture
+  let dots='';
+  const cols=['#8b5732','#4d2a13','#a3703f','#5f3418','#7a4825'];
+  for(let i=0;i<22;i++) dots+=`<ellipse cx="${(rnd()*44).toFixed(1)}" cy="${(rnd()*30).toFixed(1)}" rx="${(2+rnd()*4).toFixed(1)}" ry="${(1.5+rnd()*2.5).toFixed(1)}" fill="${cols[i%5]}"/>`;
+  $('compostDots').innerHTML = dots;
+
+  let pile = 'M778,402L778,268';
+  for(let x=792;x<=1614;x+=14) pile += `L${x},${(262 + Math.sin(x/37)*4 + (rnd()-.5)*9).toFixed(1)}`;
+  pile += 'L1614,402Z';
+
+  let g = '';
+  // tunnel shell
+  g += `<rect x="760" y="190" width="872" height="268" fill="url(#gConc)" stroke="#8d8880"/>
+        <rect x="774" y="204" width="844" height="236" fill="#f6efe7"/>
+        <path d="${pile}" fill="url(#pCompost)" stroke="#4d2a13" stroke-width="1"/>
+        <rect x="774" y="438" width="844" height="20" fill="url(#gConc)"/>`;
+  // spigot pipes and air arrows
+  g += `<rect x="935" y="404" width="672" height="16" rx="8" fill="url(#gPipe)" stroke="#7d8893"/>
+        <rect x="935" y="422" width="672" height="16" rx="8" fill="url(#gPipe)" stroke="#7d8893"/>`;
+  let k=0;
+  for(let x=975;x<=1580;x+=60){
+    g += `<g class="spig-g" style="animation-delay:${(k++%5)*0.25}s"><line class="spig" x1="${x}" y1="402" x2="${x}" y2="374"/><path class="spig-h" d="M${x-7},376L${x},362L${x+7},376Z"/><line class="spig" x1="${x}" y1="372" x2="${x}" y2="366" stroke-dasharray="2 3"/></g>`;
+  }
+  // ducts
+  g += `<rect class="duct" x="420" y="144" width="1110" height="40" fill="url(#gH)"/>
+        <rect class="duct" x="420" y="144" width="55" height="218" fill="url(#gV)"/>
+        <rect class="duct" x="1478" y="44" width="52" height="162" fill="url(#gV)"/>
+        <rect x="1470" y="116" width="68" height="8" rx="2" fill="#9aa5b0"/>
+        <path d="M1464,48L1504,6L1544,48Z" fill="url(#gH)" stroke="var(--duct-edge)" stroke-width="1.5"/>
+        <rect class="duct" x="40" y="398" width="342" height="44" fill="url(#gH)"/>
+        <rect class="duct" x="496" y="398" width="100" height="44" fill="url(#gH)"/>
+        <rect class="duct" x="690" y="398" width="250" height="44" fill="url(#gH)"/>
+        <path d="M935,398L955,404V438L935,442Z" fill="#a9cdef"/>`;
+  // fresh air louver
+  g += `<rect x="14" y="382" width="30" height="76" fill="url(#gConc)" stroke="#8d8880"/>`;
+  for(let y=390;y<452;y+=9) g += `<line x1="18" y1="${y}" x2="40" y2="${y+5}" stroke="#6f6a63" stroke-width="2"/>`;
+  // mixing cell
+  g += `<rect x="380" y="360" width="118" height="102" rx="3" fill="url(#gMetal)" stroke="#7d8893" stroke-width="1.5"/>
+        <text x="439" y="407" text-anchor="middle" class="tag-lbl" style="font-size:17px">KARIŞIM</text>
+        <text x="439" y="427" text-anchor="middle" class="tag-lbl" style="font-size:17px">HÜCRESİ</text>`;
+  // fan
+  g += `<rect x="586" y="458" width="94" height="20" rx="3" fill="#3b4552"/>
+        <text x="633" y="473" text-anchor="middle" fill="#fff" style="font-weight:700;font-size:14px;letter-spacing:.08em">FAN</text>
+        <rect x="652" y="396" width="44" height="48" fill="#1d4fc4" stroke="#0e2f86"/>
+        <circle cx="632" cy="414" r="50" fill="url(#gFan)" stroke="#0e2f86" stroke-width="2"/>
+        <circle cx="632" cy="414" r="34" fill="#173a94" stroke="#0e2f86"/>
+        <g id="rotor">${[0,45,90,135,180,225,270,315].map(a=>`<path d="M632,414 L632,384 Q640,392 638,412Z" fill="#7fb0ff" transform="rotate(${a} 632 414)"/>`).join('')}</g>
+        <circle cx="632" cy="414" r="9" fill="#d4dde8" stroke="#0e2f86"/>`;
+  // dampers
+  g += damper(255,420,'bladeFresh') + damper(538,164,'bladeRet');
+  // probes
+  g += probe(82,378,420) + probe(648,84,166) + probe(774,84,166) + probe(773,382,422) + probe(875,382,422);
+  g += `<line class="probe" x1="1548" y1="62" x2="1524" y2="62"/><rect class="probe-tip" x="1512" y="58" width="14" height="8" rx="3"/>`;
+  [[908,330],[1088,278],[1288,278],[1494,330]].forEach(([x,y])=> g += probe(x,264,y));
+  // leaders from damper / fan boxes
+  g += `<line class="leader" x1="283" y1="364" x2="270" y2="376"/><line class="leader" x1="498" y1="119" x2="546" y2="120"/><line class="leader" x1="635" y1="354" x2="633" y2="364"/>`;
+  // arrows
+  g += arrow(128,420,'r')+arrow(330,420,'r')+arrow(548,420,'r')+arrow(724,420,'r')+arrow(824,420,'r')+arrow(912,420,'r');
+  [600,712,850,1010,1170,1330,1440].forEach(x=> g += arrow(x,164,'l'));
+  g += arrow(447,236,'d')+arrow(447,316,'d')+arrow(1504,170,'u')+arrow(1504,92,'u');
+  // labels
+  g += `<text class="tag-lbl" x="912" y="128">DÖNÜŞ HAVASI</text>
+        <text class="tag-lbl" x="1462" y="84" text-anchor="end">EGZOZ</text>
+        <text class="tag-lbl" x="70" y="476">TAZE HAVA</text>
+        <rect x="780" y="458" width="156" height="24" fill="#fff" stroke="var(--line)" rx="3"/>
+        <text class="tag-lbl" x="858" y="477" text-anchor="middle">HAVA GİRİŞİ</text>
+        <rect x="1330" y="446" width="296" height="26" rx="3" fill="#fff" stroke="#2b3442" stroke-width="1.2"/>
+        <text class="tag-lbl" x="1478" y="465" text-anchor="middle" style="font-size:17px">16 × Ø160 PVC SPİGOT TABAN · 4 × 15 m</text>
+        <rect x="948" y="458" width="130" height="22" rx="3" fill="#fff" stroke="var(--line)"/>
+        <text x="1013" y="474" text-anchor="middle" style="font-weight:700;font-size:13px;fill:var(--ink-2)">Ø800 ANA FLANŞ · 4 m</text>`;
+  // value boxes
+  g += sbox(592,28,112,56,'T_RETURN','v-tret') + sbox(716,28,118,56,'O2_RETURN','v-o2');
+  g += sbox(318,96,180,48,'GERİ DÖNÜŞ DAMPERİ','v-rdamp',{dark:true,big:true});
+  g += sbox(1548,22,88,58,'T_EXHAUST','v-texh');
+  [858,1038,1238,1444].forEach((x,i)=> g += sbox(x,214,100,50,`T_COMP_${i+1}`,`v-tc${i}`));
+  g += sbox(20,284,124,46,'T_OUTSIDE','v-tout') + sbox(20,332,124,46,'RH_OUTSIDE','v-rh');
+  g += sbox(208,300,152,64,'TAZE HAVA DAMPERİ','v-fdamp',{dark:true,big:true});
+  g += sbox(560,290,152,64,'FAN ÇALIŞMA ORANI','v-fan',{dark:true,big:true});
+  g += sbox(728,334,90,48,'T_INLET','v-tin') + sbox(830,334,90,48,'P_INLET','v-pin');
+  // big compost cards
+  g += `<g class="bigcard"><rect class="bc" x="940" y="282" width="226" height="72" rx="6"/>
+          <g transform="translate(956 296)" fill="none" stroke="var(--ink)" stroke-width="2.4"><circle cx="16" cy="18" r="14"/><circle cx="16" cy="18" r="8"/><circle cx="16" cy="18" r="2.5" fill="var(--ink)"/><path d="M16 18 30 4M24 4h6v6"/></g>
+          <text class="bc-lb" x="1066" y="303" text-anchor="middle">HEDEF KOMPOST ISISI</text>
+          <text class="bc-v" id="v-hedef" x="1066" y="338" text-anchor="middle"></text></g>
+        <g class="bigcard"><rect class="bc" x="1178" y="282" width="266" height="72" rx="6"/>
+          <g transform="translate(1192 292)" fill="none" stroke="var(--ink)" stroke-width="2.4"><path d="M6 30V6a5 5 0 0 1 10 0v24a8 8 0 1 1-10 0z"/><circle cx="11" cy="37" r="4" fill="var(--ink)"/><path d="M11 33V14"/></g>
+          <text class="bc-lb" x="1324" y="301" text-anchor="middle">ANLIK KOMPOST ORTALAMASI</text>
+          <text class="bc-v" id="v-anlik" x="1324" y="333" text-anchor="middle"></text>
+          <text class="bc-sub" x="1324" y="349" text-anchor="middle">Geçerli probların ortalaması</text></g>`;
+  $('gen').innerHTML = g;
+}
+
+function buildStages(){
+  $('stages').innerHTML = STAGES.map((st,i)=>`
+    <button type="button" class="stg" id="stg-${i}" data-i="${i}" title="Simülasyonu bu etabın başından başlat">
+      <span class="no">${i+1}</span>
+      <span class="bd"><span class="nm"></span>${st.lines.map(l=>`<span class="ln">${l}</span>`).join('')}<span class="rs" id="rs-${i}"></span></span>
+      <span class="pb" hidden><i></i></span>
+    </button>`).join('');
+  STAGES.forEach((st,i)=> $('stg-'+i).querySelector('.nm').textContent = st.name);
+}
+
+/* ---------- simulation (stands in for PLC tags) ---------- */
+// Fan at 100%: 18 000 m³/h, 30 kW, 4000 Pa. Fan laws: Q ~ n, p ~ n², P ~ n³.
+const FAN_Q = 18000, FAN_KW = 30, FAN_PA = 4000, VFD_HZ = 50;
+// Air path: Ø800 header (4 m) feeds 16 × Ø160 PVC lines, 15 m each, under a 4 × 15 m floor.
+const HDR_D = 0.8, PIPE_D = 0.16, PIPES = 16, FLOOR_M2 = 4*15;
+const BASE_OFF = [0.3,-0.4,0.6,-0.2];
+// Nominal stage lengths used when the demo jumps to a later stage, and the compost temperature each stage starts from.
+const NOM = [10, 7.5, 9, 7.5, 72, 8];
+const START_T = [null, 48.5, 58.4, 58.5, 49.3, 49.3, 25];
+
+const SCEN = [
+  {k:'fan',    sev:'crit', name:'Fan arızası',               desc:'VLT FC 102 trip, fan durur'},
+  {k:'power',  sev:'crit', name:'Elektrik kesintisi',        desc:'Şebeke yok, PLC ve sensörler UPS’te'},
+  {k:'damper', sev:'warn', name:'Taze hava damperi sıkıştı', desc:'Damper kapalı konumda kalır'},
+  {k:'heat',   sev:'warn', name:'Aşırı ısınma',              desc:'Kompostta kontrolsüz biyolojik ısı'},
+  {k:'clog',   sev:'warn', name:'Spigot / kanal tıkanması',  desc:'Basınç yükselir, debi düşer'},
+  {k:'probe',  sev:'warn', name:'T_COMP_3 prob arızası',     desc:'Prob 9 °C düşük okur'},
+  {k:'tin',    sev:'warn', name:'T_INLET sensör kopuk',      desc:'4–20 mA sinyali kaybolur'},
+  {k:'door',   sev:'warn', name:'Tünel kapısı açık',         desc:'Dış hava girer, etap bekletilir'},
+];
+const SC = {};
+// Manual override per actuator; everything else (setpoints, stage changes, alarms, the other actuator) stays automatic.
+const MAN = { fan:{on:false, v:60}, damper:{on:false, v:20} };
+let s, speed = 60, hide = false;
+
+function startAt(i){
+  const x = { t:0, stage:i, stageStart:0, inBand:0, done:{}, energy:0, off:BASE_OFF.slice(),
+    tOut:13, rhOut:70, probes:[0,0,0,0], valid:[true,true,true,true], mAvg:0, min:0, max:0, dT:0,
+    compRate:0, alarms:[], since:{}, hold:false, fanCmd:0 };
+  for (let j=0;j<i;j++){ x.done[j] = NOM[j]; x.t += NOM[j]; x.energy += NOM[j]*FAN_KW*(STAGES[j].fanBase/100)**3; }
+  x.stageStart = x.t;
+  const inp = parseFloat(($('in-isi').value || '').replace(',', '.'));
+  const T0 = i===0 ? (inp > 5 && inp < 80 ? inp : 45) : START_T[i];
+  const S = STAGES[i];
+  x.avg = T0; x.spComp = S.ramp ? T0 : (S.sp ?? T0);
+  x.fan = S.fanBase; x.f = i===6 ? 0 : 0.12; x.o2 = i===6 ? 19.8 : 15;
+  x.tIn = T0 - 3; x.tRet = T0 - 0.7; x.tExh = T0 - 1.5; x.inletSp = S.inlet(x);
+  return x;
+}
+function defaultState(){
+  // Opens mid-pasteurization so the first view shows a running tunnel.
+  const x = startAt(2); x.t += 7.5; x.stageStart = x.t - 7.5; x.inBand = 7.2;
+  x.energy += 7.5*FAN_KW*(STAGES[2].fanBase/100)**3; x.avg = 58.45;
+  return x;
+}
+function measure(){
+  const p = s.probes.slice().sort((a,b)=>a-b), med = (p[1]+p[2])/2;
+  s.valid = s.probes.map(v => Math.abs(v-med) <= 2.5);
+  const vv = s.probes.filter((v,i)=>s.valid[i]);
+  s.mAvg = vv.reduce((a,b)=>a+b,0)/vv.length;
+  s.min = Math.min(...vv); s.max = Math.max(...vv); s.dT = s.max - s.min;
+}
+function advance(){ s.done[s.stage] = s.t - s.stageStart; s.stage++; s.stageStart = s.t; s.inBand = 0; }
+
+function step(dt){
+  const S = STAGES[s.stage];
+  s.t += dt;
+  // a stopped fan or an open door holds the stage clock
+  s.hold = s.stage < 6 && (SC.fan || SC.power || SC.door || s.fan < 1);
+  if (s.hold) s.stageStart += dt;
+  const ts = s.t - s.stageStart;
+  // compost setpoint: hold or ramp at the recipe rate
+  s.compRate = 0;
+  if (S.sp != null && !s.hold){
+    const d = S.sp - s.spComp;
+    if (S.ramp){ s.spComp += Math.sign(d)*Math.min(Math.abs(d), Math.abs(S.ramp)*dt); if (Math.abs(d) > .05) s.compRate = S.ramp; }
+    else s.spComp += d*Math.min(1, dt*1.5);
+  }
+  const hod = (s.t + 6) % 24, day = Math.sin(2*Math.PI*(hod-9)/24);
+  s.tOut = 13 + 5*day; s.rhOut = 72 - 14*day;
+  const run = s.fan > 1;
+  // compost mass: follows the command while air flows, heats itself when it does not
+  let dA;
+  if (s.stage < 6){
+    // a manual actuator leaves the controller less authority to hold the setpoint
+    const kf = 1.2*(SC.clog ? .6 : 1)*((MAN.fan.on || MAN.damper.on) ? .3 : 1);
+    dA = run ? clamp(kf*(s.spComp - s.avg), -3.5, 2.2) : 1.8*S.bio;
+    // air that is colder/hotter than commanded, or more/less of it, moves the pile
+    if (run && s.inletSp != null) dA += 0.12*(s.fan/100)*(s.tIn - s.inletSp) - 0.03*(s.fan - s.fanCmd)*clamp((s.avg - s.tIn)/5, -1, 2);
+    if (SC.heat) dA += 8*(1 - 0.6*clamp((s.fan - S.fanBase)/(100 - S.fanBase), 0, 1));
+  } else dA = (s.tOut - s.avg)*0.03;
+  if (SC.door) dA += (s.tOut - s.avg)*0.08;
+  s.avg += dA*dt + noise()*0.06*Math.sqrt(dt);
+  s.off = s.off.map((o,i) => o + (BASE_OFF[i]-o)*Math.min(1,dt*2) + noise()*0.08*Math.sqrt(dt));
+  s.probes = s.off.map(o => s.avg + o);
+  if (SC.probe) s.probes[2] = s.avg - 9.4 + s.off[2]*0.3;
+  measure();
+  // fan command: more air when compost runs hot, the pile is uneven, the duct is choked or fresh air is short
+  let fanT = s.stage === 6 ? 0 : clamp(S.fanBase + 14*(s.mAvg - s.spComp) + 5*Math.max(0, s.dT-2) + (SC.clog ? 20 : 0) + (SC.damper ? 15 : 0), 25, 100);
+  if (SC.door && s.stage < 6) fanT = 30;
+  s.fanCmd = fanT;
+  const fanAct = (SC.fan || SC.power) ? 0 : MAN.fan.on ? MAN.fan.v : fanT;
+  s.fan += (fanAct - s.fan)*Math.min(1, dt*90);   // VFD ramp ≈ 40 s
+  if (s.fan < 0.5 && fanAct === 0) s.fan = 0;
+  const tRet = s.avg - 0.7, fh = 1.2*(s.fan/100)**2;
+  s.inletSp = S.inlet(s);
+  if (s.inletSp != null && s.mAvg > s.spComp + 1) s.inletSp -= Math.min(6, 2*(s.mAvg - s.spComp - 1));
+  // dampers: fresh-air share that hits the inlet target, never below the O2 minimum
+  let fT = 0;
+  if (s.inletSp != null){
+    const fmin = Math.max(0.05, 1.2*S.bio/6.9 - 0.1) + Math.max(0, 14 - s.o2)*0.03;
+    fT = clamp((tRet + fh - s.inletSp)/Math.max(1, tRet - s.tOut), Math.min(fmin, 1), 1);
+  }
+  if (SC.fan) fT = 1;
+  s.fCmd = fT;
+  if (SC.power) { /* actuators unpowered: dampers stay where they are */ }
+  else if (SC.damper) s.f = 0;
+  else s.f += ((MAN.damper.on ? MAN.damper.v/100 : fT) - s.f)*Math.min(1, dt*30);   // actuator ≈ 2 min
+  s.tIn = s.fan > 0 ? s.f*s.tOut + (1-s.f)*tRet + fh : s.tIn + (s.avg - s.tIn)*Math.min(1, dt);
+  let o2T = s.fan > 1 ? 20.9 - 1.2*S.bio/(s.f + 0.1) : (s.stage === 6 ? 19.8 : 3);
+  if (SC.door) o2T = Math.max(o2T, 18);
+  s.o2 += (o2T - s.o2)*Math.min(1, dt*(s.fan > 1 ? 4 : 0.7));
+  s.tRet = tRet; s.tExh = tRet - 0.8;
+  s.energy += FAN_KW*(s.fan/100)**3*dt;
+  // stage transitions
+  if (!s.hold){
+    if (s.stage === 2 && s.mAvg >= 58 && s.mAvg <= 59.8) s.inBand += dt;
+    const m = s.mAvg;
+    if ((s.stage===0 && ((ts>=8 && s.dT<=2.5) || ts>=12)) ||
+        (s.stage===1 && m>=58.3) ||
+        (s.stage===2 && s.inBand>=8) ||
+        (s.stage===3 && ((ts>=7 && m<=50.3) || ts>=10)) ||
+        (s.stage===4 && ts>=72) ||
+        (s.stage===5 && ((ts>=8 && m<=27) || ts>=10))) advance();
+  }
+  collectAlarms(ts);
+}
+
+function collectAlarms(ts){
+  const S = STAGES[s.stage], A = [];
+  const add = (k, sev, msg, resp) => A.push({k, sev, msg, resp});
+  if (SC.power) add('power','crit','ŞEBEKE KESİNTİSİ: fan ve damperler enerjisiz','PLC ve sensörler UPS ile çalışıyor · etap saati donduruldu · şebeke/jeneratör bekleniyor');
+  else if (SC.fan) add('fan','crit','FAN ARIZASI: VLT FC 102 trip, motor durdu','Etap saati donduruldu · taze hava damperi %100 açıldı · bakım ekibine bildirim');
+  if (SC.damper) add('damper','warn',`Taze hava damperi yanıt vermiyor (komut açık, konum %0)`,'Fan devri +%15 · O2 izleniyor · damper aktüatörü kontrol edilmeli');
+  if (SC.clog && s.fan > 1) add('clog','warn',`P_INLET yüksek (${fmt(FAN_PA*1.6*(s.fan/100)**2,0)} Pa), debi %40 düşük`,'Fan devri +%20 · spigot temizleme kapakları kontrol edilmeli');
+  if (SC.tin) add('tin','warn','T_INLET sinyali yok (4–20 mA kopuk)','İnlet sıcaklığı damper konumu ve dönüş havasından tahmin ediliyor');
+  if (SC.door && s.stage < 6) add('door','warn','Tünel kapısı açık','Etap saati bekletiliyor · fan %30’a düşürüldü');
+  s.valid.forEach((v,i)=>{ if(!v) add('probe'+i,'warn',`T_COMP_${i+1} sapmalı (${fmt(s.probes[i])} °C)`,'Ortalamadan hariç tutuldu · kalan problardan hesaplanıyor'); });
+  if (s.stage < 6){
+    if (s.o2 < 7) add('o2','crit',`O2 kritik (%${fmt(s.o2)}): anaerobik bölge riski`, (SC.fan||SC.power) ? 'Hava verilemiyor · fan devreye girene kadar alarm sürecek' : 'Taze hava payı maksimuma çekildi');
+    else if (s.o2 < 12) add('o2','warn',`O2 düşük (%${fmt(s.o2)})`,'Taze hava payı artırıldı');
+    // on a cooling ramp the pile trails the setpoint by design, so that lag is not an alarm
+    const over = s.mAvg - s.spComp - (S.ramp < 0 ? Math.abs(S.ramp)/1.2 + 0.5 : 0);
+    if (s.mAvg > 65 || over > 5) add('temp','crit',`Kompost aşırı sıcak (${fmt(s.mAvg)} °C, hedef +${fmt(over)})`,'Fan %100 · inlet hedefi düşürüldü · operatör müdahalesi gerekli');
+    else if (s.mAvg > 62 || over > 2) add('temp','warn',`Kompost hedefin üzerinde (${fmt(s.mAvg)} °C, +${fmt(over)} °C)`,'Fan devri artırıldı · inlet hedefi düşürüldü');
+    const under = s.spComp - s.mAvg - (S.ramp > 0 ? S.ramp/1.2 + 0.5 : 0);
+    if (s.stage > 0 && under > 2) add('templow','warn',`Kompost hedefin altında (${fmt(s.mAvg)} °C, −${fmt(under)} °C)`,
+      (MAN.fan.on || MAN.damper.on) ? 'Manuel müdahale hedefin tutulmasını engelliyor' : 'Fan devri düşürüldü · taze hava azaltıldı');
+    if (S.dur && ts > S.dur[1]) add('time','warn',`Etap süresi aşıldı (${short(ts)} / max ${S.dur[1]} sa)`,'Geçiş koşulu bekleniyor · tarif kontrol edilmeli');
+    if (s.stage === 3 && s.dT > 5) add('dt','warn',`ΔT ${fmt(s.dT)} °C (max 5 °C)`,'Fan devri artırıldı, soğuma yavaşlatıldı');
+    if (s.stage === 2 && s.fan > 1 && !SC.tin && !SC.fan && !SC.power && (s.tIn < 52.5 || s.tIn > 56.5)) add('tinband','warn',`T_INLET pastörizasyon bandı dışında (${fmt(s.tIn)} °C)`,'Damper oranı düzeltiliyor');
+  }
+  if (MAN.fan.on) add('manfan','info',`Fan manuelde: %${fmt(MAN.fan.v,0)}`,`Otomasyonun önerisi %${fmt(s.fanCmd,0)} · etap, hedef ve alarmlar otomatik`);
+  if (MAN.damper.on) add('mandmp','info',`Taze hava damperi manuelde: %${fmt(MAN.damper.v,0)}`,`Otomasyonun önerisi %${fmt(s.fCmd*100,0)} · geri dönüş damperi %${fmt(100-MAN.damper.v,0)}`);
+  const since = {};
+  A.forEach(a => since[a.k] = s.since[a.k] ?? s.t);
+  s.since = since; s.alarms = A;
+}
+
+/* ---------- render ---------- */
+function setV(id, v, unit, d=1){
+  const el = $(id); if (!el) return;
+  const n = hide ? '—' : (typeof v === 'string' ? v : fmt(v,d));
+  el.innerHTML = `<tspan>${n}</tspan><tspan class="u"> ${unit}</tspan>`;
+}
+function setT(id, txt){ $(id).textContent = txt; }
+// Compost in the tunnel; an empty field falls back to 65 t (≈1.1 t/m² on the 60 m² floor).
+function tonnage(){
+  const v = parseFloat(($('in-ton').value || '').replace(',', '.'));
+  return v > 0 && v < 500 ? {t:v, def:false} : {t:65, def:true};
+}
+function flag(id, on){ $('g-'+id).classList.toggle('alarm', !hide && !!on); }
+function render(){
+  const H = hide, S = STAGES[s.stage], ts = s.t - s.stageStart, running = s.fan > 0.5;
+  const qf = SC.clog ? .6 : 1, pf = SC.clog ? 1.6 : 1;
+  setV('v-tret', s.tRet, '°C'); setV('v-o2', s.o2, '% O₂'); setV('v-texh', s.tExh, '°C');
+  setV('v-rdamp', (1-s.f)*100, '%', 0); setV('v-fdamp', s.f*100, '%', 0); setV('v-fan', s.fan, '%', 0);
+  setV('v-tout', s.tOut, '°C'); setV('v-rh', s.rhOut, '%RH', 0);
+  setV('v-tin', SC.tin ? 'HATA' : s.tIn, SC.tin ? '' : '°C'); setV('v-pin', FAN_PA*pf*(s.fan/100)**2, 'Pa', 0);
+  flag('v-fan', SC.fan || SC.power); flag('v-fdamp', SC.damper || SC.power); flag('v-rdamp', SC.power);
+  flag('v-tin', SC.tin); flag('v-pin', SC.clog && running); flag('v-o2', s.stage < 6 && s.o2 < 12);
+  s.probes.forEach((p,i)=>{ setV('v-tc'+i, p, '°C'); $('g-v-tc'+i).classList.toggle('dev', !H && !s.valid[i]); });
+  setV('v-hedef', s.stage===6 ? null : s.spComp, '°C'); setV('v-anlik', s.mAvg, '°C');
+  $('bladeFresh').setAttribute('transform', `rotate(${(H?0:s.f*90).toFixed(1)} 255 420)`);
+  $('bladeRet').setAttribute('transform', `rotate(${(H?0:(1-s.f)*90).toFixed(1)} 538 164)`);
+  $('mimic').classList.toggle('running', !H && running);
+  $('rotor').style.animationDuration = (0.35/Math.max(.2, s.fan/100)).toFixed(2)+'s';
+
+  const Q = s.fan/100*FAN_Q*qf, qs = Q/3600;
+  const vHdr = qs/(Math.PI*(HDR_D/2)**2), vPipe = qs/(PIPES*Math.PI*(PIPE_D/2)**2);
+  setT('k-flow', H ? '—' : fmt(Q,0));
+  const T = tonnage();
+  setT('k-flow-sub', `%100 = 18.000 m³/h · ton başı ${H ? '—' : fmt(Q/T.t,0)} m³/h·t · hat başı ${H ? '—' : fmt(Q/PIPES,0)} m³/h`);
+  setT('k-vel', H ? '—' : fmt(vHdr,1));
+  setT('k-vel-sub', `Ø800 ana flanş · boru içi ${H ? '—' : fmt(vPipe,1)} m/s (16 × Ø160)`);
+  setT('k-pow', H ? '—' : fmt(FAN_KW*(s.fan/100)**3,1));
+  setT('k-pow-sub', `%100 = ${FAN_KW} kW · anlık %${H ? '—' : fmt(s.fan,0)} · VLT FC 102 ${H ? '—' : fmt(s.fan/100*VFD_HZ,1)} Hz`);
+  setT('k-energy', H ? '—' : fmt(s.energy,0));
+  setT('k-energy-sub', `Ton başına ${H ? '—' : fmt(s.energy/T.t,2)} kWh/t · ${fmt(T.t, T.t % 1 ? 1 : 0)} t${T.def ? ' (varsayılan)' : ''}`);
+  setT('c-in-sp', H || s.inletSp==null ? '—' : fmt(s.inletSp)); setT('c-in-rt', H || s.inletSp==null ? '± —' : fmtS(s.compRate));
+  setT('c-cp-sp', H || s.stage===6 ? '—' : fmt(s.spComp)); setT('c-cp-rt', H || s.stage===6 ? '± —' : fmtS(s.compRate));
+  setT('s-min', H ? '—' : fmt(s.min)); setT('s-max', H ? '—' : fmt(s.max)); setT('s-dt', H ? '—' : fmt(s.dT));
+
+  const bad = s.valid.map((v,i)=>v?null:i).filter(i=>i!=null);
+  $('devNote').classList.toggle('on', !H && bad.length>0);
+  $('devText').innerHTML = (!H && bad.length)
+    ? `<b>Sapmalı prob: ${bad.map(i=>`T_COMP_${i+1} (${fmt(s.probes[i])} °C)`).join(', ')}</b> · gerçek değer görünür, ortalamadan hariç`
+    : `<b>Sapmalı prob:</b> gerçek değer görünür, ortalamadan hariç`;
+
+  STAGES.forEach((st,i)=>{
+    const el = $('stg-'+i), pb = el.querySelector('.pb');
+    el.classList.toggle('active', i===s.stage); el.classList.toggle('done', i<s.stage);
+    setT('rs-'+i, i<s.stage ? `✓ ${short(s.done[i])}` : i===s.stage ? `${s.hold ? '⏸' : '▶'} ${short(ts)}` : '');
+    pb.hidden = i!==s.stage || !st.dur;
+    if (st.dur) pb.firstElementChild.style.width = Math.min(100, ts/st.dur[1]*100)+'%';
+  });
+  setT('actStage', S.short || S.name);
+  setT('elapsed', long(s.t));
+  setT('stageTime', short(ts)); setT('stagePlan', 'plan ' + PLAN[s.stage]);
+  let v, met = false;
+  switch(s.stage){
+    case 0: v = `${short(ts)} / 8 sa · ΔT ${fmt(s.dT)} °C`; break;
+    case 1: v = `Ort. ${fmt(s.mAvg)} / 58,3 °C`; break;
+    case 2: v = `Bant içi ${short(s.inBand)} / 8 sa`; met = s.inBand >= 8; break;
+    case 3: v = `${short(ts)} / 7 sa · Ort. ${fmt(s.mAvg)} °C`; break;
+    case 4: v = `${short(ts)} / 72 sa`; break;
+    case 5: v = `${short(ts)} / 8 sa · Ort. ${fmt(s.mAvg)} °C`; break;
+    default: v = 'Çevrim tamamlandı'; met = true;
+  }
+  setT('verify', H && s.stage<6 ? '—' : v);
+  setT('verifySub', s.hold ? `⏸ Etap bekletiliyor (${SC.door && !SC.fan && !SC.power ? 'kapı açık' : 'fan durdu'})` : RULE[s.stage]);
+  $('verifyIc').classList.toggle('met', met);
+  $('cycBar').style.width = Math.min(100, s.t/128*100)+'%';
+
+  const sc = $('statusChip');
+  const fault = !H && (SC.fan || SC.power);
+  sc.classList.toggle('idle', H); sc.classList.toggle('fault', fault);
+  sc.classList.toggle('stopped', !H && !fault && (!running || SC.door));
+  setT('statusText', H ? 'BAĞLANTI BEKLENİYOR' : SC.power ? 'ŞEBEKE YOK • UPS DEVREDE' : SC.fan ? 'ARIZA • FAN DURDU'
+    : SC.door && s.stage < 6 ? 'KAPI AÇIK • ETAP BEKLEMEDE' : (MAN.fan.on || MAN.damper.on) ? 'YARI OTOMATİK • MANUEL MÜDAHALE' : running ? 'OTOMATİK • FAN ÇALIŞIYOR' : 'OTOMATİK • FAN KAPALI');
+  $('demoTag').hidden = H;
+
+  const L = H ? [] : s.alarms, crit = L.some(a => a.sev === 'crit'), nA = L.filter(a => a.sev !== 'info').length;
+  setT('alarmCount', String(nA));
+  $('alarmChip').classList.toggle('on', crit); $('alarmChip').classList.toggle('warnon', !crit && nA > 0);
+  $('alarmChip').title = L.length ? L.map(a=>a.msg).join(' · ') : 'Aktif alarm yok';
+  setT('alN', String(nA));
+  renderManual();
+  renderMobile();
+  updateSound();
+  $('alList').innerHTML = L.length
+    ? L.map(a=>`<li class="${a.sev}"><i class="sev ${a.sev}">${{crit:'KRİTİK',warn:'UYARI',info:'MANUEL'}[a.sev]}</i><b>${a.msg}</b><small class="num">t+${short(s.since[a.k])}</small><span>Otomatik tepki: ${a.resp}</span></li>`).join('')
+    : `<li class="none">${H ? 'Bağlantı yok, alarm okunamıyor.' : 'Aktif alarm yok. Sistem normal çalışıyor.'}</li>`;
+}
+
+function renderManual(){
+  [['fan', s.fan, s.fanCmd, ['v-fan']], ['damper', s.f*100, s.fCmd*100, ['v-fdamp','v-rdamp']]].forEach(([k, act, cmd, boxes]) => {
+    const M = MAN[k], r = $('mn-'+k+'-r'), n = $('mn-'+k+'-n');
+    $('mn-'+k).classList.toggle('on', M.on);
+    $('mn-'+k).querySelectorAll('.mode button').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.m === 'man') === M.on)));
+    if (!M.on && document.activeElement !== r && document.activeElement !== n){ r.value = Math.round(act); n.value = Math.round(act); }
+    boxes.forEach(id => $('g-'+id).classList.toggle('man', M.on && !hide));
+    const extra = k === 'fan' ? ` · ${fmt(FAN_KW*(act/100)**3,1)} / ${FAN_KW} kW · ${fmt(act/100*FAN_Q,0)} m³/h` : ` · geri dönüş %${fmt(100-act,0)}`;
+    setT('mn-'+k+'-info', (M.on ? `Manuel %${fmt(M.v,0)} · otomasyonun önerisi %${fmt(cmd,0)}` : `Otomatik · komut %${fmt(cmd,0)}`) + extra);
+  });
+  $('g-v-fan').querySelector('.sb-lb').textContent = MAN.fan.on ? 'FAN ORANI · MANUEL' : 'FAN ÇALIŞMA ORANI';
+  $('g-v-fdamp').querySelector('.sb-lb').textContent = MAN.damper.on ? 'TAZE HAVA · MANUEL' : 'TAZE HAVA DAMPERİ';
+}
+
+/* ---------- manual inputs (kept in this browser) ---------- */
+const KEY = 'makom-tunel-01-inputs';
+const INPUTS = ['kompostNo','in-nem','in-n','in-ph','in-isi','in-ton'];
+try { const saved = JSON.parse(localStorage.getItem(KEY) || '{}'); INPUTS.forEach(id => { if (saved[id]) $(id).value = saved[id]; }); } catch(e){}
+INPUTS.forEach(id => $(id).addEventListener('input', () => {
+  try { const o={}; INPUTS.forEach(k => o[k] = $(k).value); localStorage.setItem(KEY, JSON.stringify(o)); } catch(e){}
+}));
+
+/* ---------- controls ---------- */
+let msgTimer;
+function note(txt){ const el = $('demoMsg'); el.textContent = txt; clearTimeout(msgTimer); msgTimer = setTimeout(() => el.textContent = '', 4000); }
+function jump(i){
+  s = startAt(i); step(0.001); render();
+  note(`${i+1}. etaptan başlatıldı: ${STAGES[i].short || STAGES[i].name}`);
+}
+$('stages').addEventListener('click', e => { const b = e.target.closest('.stg'); if (b) jump(+b.dataset.i); });
+$('startSel').innerHTML = '<option value="">Etap seçin…</option>' + STAGES.map((st,i)=>`<option value="${i}">${i+1}. ${st.short || st.name}</option>`).join('');
+$('startSel').addEventListener('change', e => { if (e.target.value !== ''){ jump(+e.target.value); e.target.value = ''; } });
+$('speedSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  speed = +b.dataset.s;
+  $('speedSeg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x===b)));
+});
+$('dataBtn').addEventListener('click', e => { hide = !hide; e.currentTarget.setAttribute('aria-pressed', String(hide)); e.currentTarget.textContent = hide ? 'Veriyi göster' : 'Veriyi gizle'; render(); });
+$('resetBtn').addEventListener('click', () => jump(0));
+
+$('scList').innerHTML = SCEN.map(c => `<button type="button" class="sc ${c.sev}" data-k="${c.k}" aria-pressed="false"><b>${c.name}</b><span>${c.desc}</span><i class="sev ${c.sev}">${c.sev==='crit'?'KRİTİK':'UYARI'}</i></button>`).join('');
+$('scList').addEventListener('click', e => {
+  const b = e.target.closest('.sc'); if (!b) return;
+  const k = b.dataset.k; SC[k] = !SC[k]; b.setAttribute('aria-pressed', String(!!SC[k]));
+  step(0.001); render();
+});
+$('clearSc').addEventListener('click', () => {
+  SCEN.forEach(c => SC[c.k] = false);
+  $('scList').querySelectorAll('.sc').forEach(b => b.setAttribute('aria-pressed','false'));
+  step(0.001); render();
+});
+$('alarmChip').addEventListener('click', () => $('alarmPanel').scrollIntoView({behavior:'smooth', block:'start'}));
+
+function setMan(k, on, v){
+  const M = MAN[k];
+  if (on && !M.on && v == null) v = k === 'fan' ? s.fan : s.f*100;   // bumpless: take over from the current position
+  M.on = on;
+  if (v != null) M.v = clamp(Math.round(v), 0, 100);
+  if (on){ $('mn-'+k+'-r').value = M.v; $('mn-'+k+'-n').value = M.v; }
+  step(0.001); render();
+}
+['fan','damper'].forEach(k => {
+  const root = $('mn-'+k);
+  root.querySelector('.mode').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMan(k, b.dataset.m === 'man'); });
+  root.querySelector('.quick').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMan(k, true, +b.dataset.v); });
+  $('mn-'+k+'-r').addEventListener('input', e => setMan(k, true, +e.target.value));
+  $('mn-'+k+'-n').addEventListener('change', e => { const v = parseFloat(e.target.value.replace(',', '.')); if (isFinite(v)) setMan(k, true, v); });
+});
+
+/* ---------- phone layout ---------- */
+const mqMobile = window.matchMedia('(max-width: 900px)');
+// On narrow screens the manual compost inputs move out of the diagram so they stay large enough to tap.
+function placePanel(){ (mqMobile.matches ? $('inpanelSlot') : $('panelFO')).appendChild(document.querySelector('.inpanel')); }
+if (mqMobile.addEventListener) mqMobile.addEventListener('change', () => { placePanel(); render(); });
+else mqMobile.addListener(() => { placePanel(); render(); });
+placePanel();
+// The diagram's values, repeated as a readable grid under it on phones.
+const MS = [['FAN ORANI','v-fan'],['TAZE HAVA DAMPERİ','v-fdamp'],['GERİ DÖNÜŞ DAMPERİ','v-rdamp'],['T_INLET','v-tin'],['P_INLET','v-pin'],
+  ['T_RETURN','v-tret'],['O2_RETURN','v-o2'],['T_EXHAUST','v-texh'],['T_OUTSIDE','v-tout'],['RH_OUTSIDE','v-rh'],
+  ['T_COMP_1','v-tc0'],['T_COMP_2','v-tc1'],['T_COMP_3','v-tc2'],['T_COMP_4','v-tc3'],['HEDEF KOMPOST','v-hedef'],['ANLIK ORTALAMA','v-anlik']];
+$('msens').innerHTML = MS.map(([l,id]) => `<div class="ms" id="ms-${id}"><span>${l}</span><b></b></div>`).join('');
+function renderMobile(){
+  if (!mqMobile.matches) return;
+  MS.forEach(([, id]) => {
+    const el = $('ms-'+id), g = $('g-'+id);
+    el.lastElementChild.textContent = $(id).textContent;
+    ['alarm','dev','man'].forEach(c => el.classList.toggle(c, !!g && g.classList.contains(c)));
+  });
+}
+
+/* ---------- fan sound (Web Audio; browsers allow it only after a click) ---------- */
+// Air rush = filtered noise that opens up with speed; blade-pass tone ≈ 296 Hz at 50 Hz
+// (≈1480 rpm × 12 blades / 60); motor hum at twice the VFD output frequency.
+let audio = null;
+function startSound(){
+  const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+  const ctx = new AC();
+  const buf = ctx.createBuffer(1, ctx.sampleRate*2, ctx.sampleRate), d = buf.getChannelData(0);
+  for (let i=0;i<d.length;i++) d[i] = Math.random()*2 - 1;
+  const noise = ctx.createBufferSource(); noise.buffer = buf; noise.loop = true;
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.8;
+  const nGain = ctx.createGain(), bGain = ctx.createGain(), hGain = ctx.createGain(), master = ctx.createGain();
+  [nGain, bGain, hGain].forEach(g => { g.gain.value = 0; g.connect(master); });
+  master.gain.value = 0.7; master.connect(ctx.destination);
+  noise.connect(lp).connect(nGain);
+  const blade = ctx.createOscillator(); blade.type = 'triangle'; blade.connect(bGain);
+  const hum = ctx.createOscillator(); hum.type = 'sine'; hum.connect(hGain);
+  noise.start(); blade.start(); hum.start();
+  audio = {ctx, lp, nGain, blade, bGain, hum, hGain, on:false};
+  return true;
+}
+function updateSound(){
+  if (!audio || !audio.on) return;
+  const r = hide ? 0 : clamp(s.fan/100, 0, 1), t = audio.ctx.currentTime, tc = 0.3, live = r > 0.005;
+  audio.lp.frequency.setTargetAtTime(220 + 2400*r, t, tc);
+  audio.nGain.gain.setTargetAtTime(live ? 0.04 + 0.4*r**1.5 : 0, t, tc);
+  audio.blade.frequency.setTargetAtTime(Math.max(20, 296*r), t, tc);
+  audio.bGain.gain.setTargetAtTime(live ? 0.05*r**2 : 0, t, tc);
+  audio.hum.frequency.setTargetAtTime(Math.max(20, 2*VFD_HZ*r), t, tc);
+  audio.hGain.gain.setTargetAtTime(live ? 0.06*r : 0, t, tc);
+}
+$('soundBtn').addEventListener('click', e => {
+  const btn = e.currentTarget;
+  if (!audio && !startSound()){ setT('soundLbl', 'SES DESTEKLENMİYOR'); return; }
+  audio.on = !audio.on;
+  if (audio.on) audio.ctx.resume(); else audio.ctx.suspend();
+  btn.setAttribute('aria-pressed', String(audio.on));
+  setT('soundLbl', audio.on ? 'FAN SESİ AÇIK' : 'FAN SESİ');
+  updateSound();
+});
+
+function tickClock(){ setT('clock', new Date().toLocaleTimeString('tr-TR',{hour12:false})); }
+
+buildMimic(); buildStages();
+// clicking the fan or a damper in the diagram jumps to its manual control
+[['v-fan','fan'],['v-fdamp','damper'],['v-rdamp','damper']].forEach(([id,k]) => {
+  const g = $('g-'+id); g.style.cursor = 'pointer';
+  g.addEventListener('click', () => {
+    $('manualPanel').scrollIntoView({behavior:'smooth', block:'center'});
+    $('mn-'+k).classList.add('flash'); setTimeout(() => $('mn-'+k).classList.remove('flash'), 1400);
+  });
+});
+s = defaultState(); step(0.001); render(); tickClock();
+setInterval(() => {
+  const dt = 0.25*speed/3600;
+  const n = Math.ceil(dt/0.02);
+  for (let i=0;i<n;i++) step(dt/n);
+  render();
+}, 250);
+setInterval(tickClock, 1000);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "makom-tunel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MAKOM Faz 2 tünel otomasyon panosu — created by GOTONOM",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}
