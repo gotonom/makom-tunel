@@ -265,7 +265,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-o
 .mn-info{font-size:13px;color:var(--ink-2)}
 .sbox.man:not(.alarm) .sb-hd{fill:var(--warn)}
 .sbox.man:not(.alarm) .sb-bg{stroke:var(--warn);stroke-width:2.5}
-@media (max-width:860px){ .mn-grid,.al-grid{grid-template-columns:1fr} }
+@media (max-width:860px){ .mn-grid,.al-grid{grid-template-columns:1fr} .al-active{order:-1} }
+@media (max-width:520px){ .stg{min-height:0} }
 @media (max-width:520px){ .sc-list{grid-template-columns:1fr} }
 
 .demo .sel{display:inline-flex;align-items:center;gap:6px}
