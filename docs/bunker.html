@@ -515,6 +515,7 @@ svg:not(.running) #rotor{animation-play-state:paused}
     </span>
     <button type="button" class="btn" id="dataBtn" aria-pressed="false">Veriyi gizle</button>
     <span id="demoMsg" style="color:var(--ok);font-weight:600" role="status"></span>
+    <button type="button" class="btn" id="resetBtn" style="margin-left:auto">Başa sar (demo)</button>
   </div>
 
   <footer class="foot"><span>MAKOM Kompost · Faz 1 Bunker Otomasyonu · 3 bunker × 18,00 × 7,20 m</span><span>Created by <b>GOTONOM</b></span></footer>
@@ -916,6 +917,7 @@ $('clearSc').addEventListener('click', () => { B[sel].sc = {}; render(); });
 $('alarmChip').addEventListener('click', () => $('alarmPanel').scrollIntoView({behavior:'smooth', block:'start'}));
 $('speedSeg').addEventListener('click', e => { const x = e.target.closest('button'); if (!x) return; speed = +x.dataset.s; $('speedSeg').querySelectorAll('button').forEach(y => y.setAttribute('aria-pressed', String(y === x))); });
 $('dataBtn').addEventListener('click', e => { hide = !hide; e.currentTarget.setAttribute('aria-pressed', String(hide)); e.currentTarget.textContent = hide ? 'Veriyi göster' : 'Veriyi gizle'; render(); });
+$('resetBtn').addEventListener('click', () => { B.forEach(b => { b.sc = {}; b.mode = 'auto'; b.manualOn = false; b.base = BASE_RUN; b.stop = BASE_STOP; b.tgt = {}; }); jump(B[0], 2, 26); jump(B[1], 1, 14); jump(B[2], 0, 6); note('Üç bunker başlangıç durumuna döndü'); render(); });
 let msgT; function note(t){ setT('demoMsg', t); clearTimeout(msgT); msgT = setTimeout(() => setT('demoMsg',''), 4000); }
 
 /* ---------- fan sound ---------- */
