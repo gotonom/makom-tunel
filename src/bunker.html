@@ -384,7 +384,7 @@ svg:not(.running) #rotor{animation-play-state:paused}
       <label class="af"><span>Toplam azot (N)</span><span class="ipv"><input id="a-n" inputmode="decimal" placeholder="—" autocomplete="off"><i>%</i></span><small>Baz: kuru madde</small></label>
       <label class="af"><span>Giriş pH</span><span class="ipv"><input id="a-ph" inputmode="decimal" placeholder="—" autocomplete="off"></span></label>
       <label class="af"><span>Giriş sıcaklığı</span><span class="ipv"><input id="a-isi" inputmode="decimal" placeholder="—" autocomplete="off"><i>°C</i></span></label>
-      <label class="af"><span>Tonaj</span><span class="ipv"><input id="a-ton" inputmode="decimal" placeholder="250" autocomplete="off"><i>t</i></span></label>
+      <label class="af"><span>Tonaj</span><span class="ipv"><input id="a-ton" inputmode="decimal" placeholder="210" autocomplete="off"><i>t</i></span></label>
     </div>
   </section>
 
@@ -522,9 +522,10 @@ const hhmm = h => { const m = Math.max(0, Math.round(h*60)); return `${String(Ma
 const dur = h => { const m = Math.max(0, Math.round(h*60)), d = Math.floor(m/1440), hh = Math.floor(m%1440/60), mm = m%60; return d ? `${d} gün ${hh} sa ${mm} dk` : `${hh} sa ${mm} dk`; };
 
 /* ---------- plant and recipe ---------- */
-// Bunker fan — the user has not confirmed this model yet (values from the concept panel): doğrulanacak.
-const BFAN = { q100: 2000, kw100: 7.5, pa100: 6000 };
-const DUCT_D = 0.40;                 // assumed supply duct Ø400 mm (doğrulanacak)
+// Bunker fan, research 2026-10 (doğrulanacak): ~210 t per bunker (2,5 m × 650 kg/m³); 5/30 duty must average
+// ~10 m³/h·t, so ~60 m³/h·t while running → 12.000 m³/h at ~5.000 Pa; ~24 kW shaft on a 30 kW 2-pole motor.
+const BFAN = { q100: 12000, kw100: 24, pa100: 5000, rpm: 2950, motor: 30 };
+const DUCT_D = 0.63;                 // Ø630 supply header ≈ 10,7 m/s at 100 % (doğrulanacak)
 // PLC rules agreed with MAKOM: 5 min on / 25 min off at 100 %, automatic extension to 6–7 min,
 // 7 min continuous running is a hard limit independent of the operator screen.
 const BASE_RUN = 5, BASE_STOP = 25, HARD_MAX = 7, RATIO_TARGET = 0.9;
@@ -742,7 +743,7 @@ const MS = [['FAN','v-fan-ms'],['P_BUNKER','v-p'],['O₂_BUNKER','v-o2']].concat
 /* ---------- render ---------- */
 function setV(id, v, unit, d=1){ const el = $(id); if (!el) return; el.innerHTML = `<tspan>${hide ? '—' : (typeof v === 'string' ? v : fmt(v,d))}</tspan><tspan class="u"> ${unit}</tspan>`; }
 function setT(id, t){ $(id).textContent = t; }
-function tons(b){ const v = parseFloat(((b.inputs['a-ton'])||'').replace(',','.')); return v > 0 && v < 2000 ? {t:v, def:false} : {t:250, def:true}; }
+function tons(b){ const v = parseFloat(((b.inputs['a-ton'])||'').replace(',','.')); return v > 0 && v < 2000 ? {t:v, def:false} : {t:210, def:true}; }
 const mq = window.matchMedia('(max-width: 900px)');
 
 function renderOverview(){
@@ -772,7 +773,7 @@ function render(){
   setT('k-q', H ? '—' : fmt(Q,0)); setT('k-q-sub', `%100 = ${fmt(BFAN.q100,0)} m³/h · ${fmt(BFAN.q100/T.t,1)} m³/h·t`);
   setT('k-v', H ? '—' : fmt(Q/3600/(Math.PI*(DUCT_D/2)**2),1)); setT('k-v-sub', `Ø${DUCT_D*1000} kanal varsayımı · doğrulanacak`);
   setT('k-f', H ? '—' : b.running ? '100' : '0'); setT('k-f-sub', S.mode === 'pulse' ? `Çevrim ortalaması %${fmt(100*b.runDur/(b.runDur+b.stop),0)}` : S.mode === 'cont' ? 'Dolum: sürekli' : 'Boşaltma: kapalı');
-  setT('k-p', H ? '—' : fmt(b.running ? BFAN.kw100 : 0,1)); setT('k-p-sub', `Çevrim ort. ${fmt(cycleAvgKw,2)} kW · inverter verisi, model doğrulanacak`);
+  setT('k-p', H ? '—' : fmt(b.running ? BFAN.kw100 : 0,1)); setT('k-p-sub', `Çevrim ort. ${fmt(cycleAvgKw,1)} kW · ${BFAN.motor} kW motor, ${fmt(BFAN.rpm,0)} d/dk · FC 102 P30K önerisi · doğrulanacak`);
   setT('k-e', H ? '—' : fmt(b.energy,0)); setT('k-e-sub', `Bu parti · ${H ? '—' : fmt(b.energy/T.t,2)} kWh/t · ${fmt(T.t,0)} t${T.def ? ' (varsayılan)' : ''}`);
   const man = b.mode === 'manual' && S.mode === 'pulse';
   $('k-mode-card').classList.toggle('man', man);
@@ -917,7 +918,7 @@ function startSound(){
   const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = .8;
   const nG = ctx.createGain(), tG = ctx.createGain(), master = ctx.createGain();
   nG.gain.value = 0; tG.gain.value = 0; master.gain.value = .7;
-  const tone = ctx.createOscillator(); tone.type = 'triangle'; tone.frequency.value = 580;   // high-pressure fan ≈ 2900 rpm × 12 blades
+  const tone = ctx.createOscillator(); tone.type = 'triangle'; tone.frequency.value = BFAN.rpm*12/60;   // blade-pass tone of a 2-pole high-pressure fan
   src.connect(lp).connect(nG).connect(master); tone.connect(tG).connect(master); master.connect(ctx.destination);
   src.start(); tone.start(); audio = {ctx, lp, nG, tG, on:false}; return true;
 }

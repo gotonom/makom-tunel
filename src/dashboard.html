@@ -445,7 +445,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-o
         <div class="mn-info num" id="mn-fan-info"></div>
       </div>
       <div class="mn" id="mn-damper">
-        <div class="mn-top"><b>TAZE HAVA DAMPERİ <small class="servo">Belimo 20 Nm servo</small></b>
+        <div class="mn-top"><b>TAZE HAVA DAMPERİ <small class="servo">Belimo SM24A-SR · 20 Nm · 0–10 V</small></b>
           <span class="seg mode"><button type="button" data-m="auto" aria-pressed="true">Otomatik</button><button type="button" data-m="man" aria-pressed="false">Manuel</button></span></div>
         <div class="mn-ctl">
           <input type="range" id="mn-damper-r" min="0" max="100" step="1" aria-label="Taze hava damperi açıklığı">
@@ -882,7 +882,7 @@ function render(){
   setT('k-vel', H ? '—' : fmt(vHdr,1));
   setT('k-vel-sub', `Ø800 ana flanş · boru içi ${H ? '—' : fmt(vPipe,1)} m/s (16 × Ø160)`);
   setT('k-pow', H ? '—' : fmt(FAN_KW*(s.fan/100)**3,1));
-  setT('k-pow-sub', `%100 = ${FAN_KW} kW, ${fmt(FAN_RPM,0)} d/dk · anlık ${H ? '—' : fmt(FAN_RPM*s.fan/100,0)} d/dk · VLT FC 102 ${H ? '—' : fmt(s.fan/100*VFD_HZ,1)} Hz`);
+  setT('k-pow-sub', `%100 = ${FAN_KW} kW, ${fmt(FAN_RPM,0)} d/dk · anlık ${H ? '—' : fmt(FAN_RPM*s.fan/100,0)} d/dk · VLT FC 102 P37K ${H ? '—' : fmt(s.fan/100*VFD_HZ,1)} Hz`);
   setT('k-energy', H ? '—' : fmt(s.energy,0));
   setT('k-energy-sub', `Ton başına ${H ? '—' : fmt(s.energy/T.t,2)} kWh/t · ${fmt(T.t, T.t % 1 ? 1 : 0)} t${T.def ? ' (varsayılan)' : ''}`);
   setT('c-in-sp', H || s.inletSp==null ? '—' : fmt(s.inletSp)); setT('c-in-rt', H || s.inletSp==null ? '± —' : fmtS(s.compRate));

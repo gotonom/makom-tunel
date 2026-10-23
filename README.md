@@ -33,6 +33,23 @@ railway up --service makom-tunel --detach
 
 ## Tesis değerleri
 
-- **Faz 2 tünel:** fan %100: 18.000 m³/h, 4.000 Pa, 30 kW, 1.450 d/dk · Danfoss VLT HVAC FC 102 (37 kW) · Belimo 20 Nm damper servoları · tünel 4 × 15 m (T1–T4) · 16 × Ø160 PVC spigot hattı · Ø800 ana flanş.
-- **Faz 1 bunker:** 3 bunker, 18,00 × 7,20 m iç ölçü. Fan modeli doğrulanacak (panelde 7,5 kW, 2.000 m³/h, 6.000 Pa örnek değer).
-- **Üretim odaları:** 20 oda, 7,00 × 18,00 m (126 m²), 10 + 10 karşılıklı, 5 m koridor. Klima santrali değerleri doğrulanacak.
+- **Faz 2 tünel (MAKOM):** fan %100: 18.000 m³/h, 4.000 Pa, 30 kW, 1.450 d/dk · Danfoss VLT HVAC FC 102 (37 kW) · Belimo 20 Nm damper servoları · tünel 4 × 15 m (T1–T4) · 16 × Ø160 PVC spigot hattı · Ø800 ana flanş.
+- **Faz 1 bunker:** 3 bunker, 18,00 × 7,20 m iç ölçü.
+- **Üretim odaları:** 20 oda, 7,00 × 18,00 m (126 m²), 10 + 10 karşılıklı, 5 m koridor.
+
+## Ekipman araştırması (Ekim 2026, doğrulanacak)
+
+Panellerde kullanılan ve MAKOM tarafından henüz onaylanmamış değerler:
+
+| Parametre | Değer | Dayanak |
+|---|---|---|
+| Bunker kompost kütlesi | ~210 t (2,5 m × 650 kg/m³; 170–250 t) | Spa Hills Faz I bin verisi |
+| Bunker fanı | 12.000 m³/h, ~5.000 Pa, ~24 kW mil gücü, 30 kW 2 kutuplu motor (2.950 d/dk) | Dalsem: Faz I 10–15 m³/h·t ve 3.500–6.000 Pa; 5/30 çevrimde ortalama 10 m³/h·t için çalışırken ~60 m³/h·t (Penn State 61,3) |
+| Bunker invertörü | Danfoss FC-102P30KT4 (22 kW motorla P22K) | Danfoss FC 102 güç sınıfları |
+| Oda yatak alanı / kompost | ~112 m² (1,4 m × 16 m × 5 kat, tek sıra) / ~10 t (90 kg/m²) | Mushroom Office, WUR |
+| Oda klima santrali | 6.000 m³/h, ~800 Pa toplam (450 Pa dış), ~2,2 kW EC fan, 25 kW soğutma, 12 kW ısıtma | WUR (~190 m³/h·t besleme), EVROPROM (1,5–2 kW/t soğutma) |
+| Damper servosu | Belimo SM24A-SR (20 Nm, 0–10 V, 150 s); küçük oda damperlerinde NM24A-SR (10 Nm) yeterli | Belimo bayi verileri |
+| Tünel invertörü | FC-102P30KT4 (61 A) yeterli; seçilen P37K (73 A) sıcak ortam için pay bırakır | Danfoss FC 102 |
+| Tünel fanı kontrolü | 5 m³/s × 4.000 Pa = 20 kW hava gücü → 30 kW milde η ≈ %67; 1.450 d/dk ile ~1,1 m çark makul | hesap |
+
+Oda 7 m genişlikte iki sıra raf varsa yatak alanı ve oda değerleri yaklaşık iki katına çıkar.

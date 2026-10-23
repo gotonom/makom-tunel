@@ -466,23 +466,25 @@ function short(h){ const m=Math.max(0,Math.round(h*60)); return `${Math.floor(m/
 
 /* ---------- equipment (doğrulanacak: oda santrali fan değerleri kullanıcıdan gelmedi) ---------- */
 // Oda klima santrali fanı %100'de. Görseldeki örnek: %65'te ≈18.200 m³/h. Fan kanunları: Q ~ n, p ~ n², P ~ n³.
-const ODA_FAN = { q100: 28000, kw100: 15, pa100: 800, hz: 50 };
-const DUCT_A = 1.05;            // m², tavan besleme kanalı kesiti (doğrulanacak)
+// Research 2026-10 (doğrulanacak): one AHU per 126 m² room, ~112 m² bed (1,4 m × 16 m × 5 tiers), ~10 t compost.
+// ~600 m³/h·t supply, ~10 air changes/h; EC plug fan ~2,2 kW at ~800 Pa total (450 Pa external).
+const ODA_FAN = { q100: 6000, kw100: 2.2, pa100: 800, hz: 50 };
+const DUCT_A = 0.36;            // m², 600 × 600 tavan besleme kanalı ≈ 4,6 m/s (doğrulanacak)
 const ROOM_V = 126*4.5;         // m³, 7 × 18 m oda, raflar arası hava hacmi dahil
 const COOL_DT = 12, HEAT_DT = 15; // batarya tam açıkken hava sıcaklığı farkı, °C
 const ROOMS = 20, CYCLE_H = 52*24;
 
 /* ---------- 52-day recipe (örnek tarif — işletmenin kendi tarifiyle doğrulanacak) ---------- */
 // room/rh/co2/tin/fan/fresh: [setpoint, alt, üst]; comp: hedef kompost; gen: kompostun biyolojik ısısı;
-// co2g: oda içi CO2 üretimi (ppm/sa); evap: yatak buharlaşması (nem %/sa).
-const FLUSH = {room:[17,16,18], comp:19, rh:[88,85,90], co2:[900,800,1000], tin:[16,15,17], fan:[70,40,100], fresh:[35,15,70], gen:.8, co2g:5000, evap:12};
+// co2g: oda içi CO2 üretimi (ppm/sa, ~10 t kompost ve 6.000 m³/h santral için); evap: yatak buharlaşması (nem %/sa).
+const FLUSH = {room:[17,16,18], comp:19, rh:[88,85,90], co2:[900,800,1000], tin:[16,15,17], fan:[70,40,100], fresh:[35,15,70], gen:.8, co2g:2000, evap:4.8};
 const STAGES = [
-  {k:'kul', code:'KUL', name:'KULUÇKA', d:[1,15], room:[22,21,23.5], comp:24.5, rh:[95,92,98], co2:[6000,5000,10000], tin:[20.5,19,22], fan:[45,30,70], fresh:[5,0,15], gen:1.2, co2g:5000, evap:2, color:'#7c5a3a'},
-  {k:'ort', code:'ÖRT', name:'ÖRTÜ TOPRAĞI', d:[16,23], room:[22.5,21.5,23.5], comp:24, rh:[95,92,98], co2:[4000,3000,5000], tin:[21.5,20,23], fan:[50,30,80], fresh:[8,4,25], gen:.8, co2g:6000, evap:2.5, color:'#5b6470'},
-  {k:'rak', code:'RAK', name:'RAKING', d:[24,24], room:[22.5,21.5,23.5], comp:24, rh:[95,92,98], co2:[4000,3000,5000], tin:[21.5,20,23], fan:[50,30,80], fresh:[8,4,25], gen:.8, co2g:6000, evap:2.5, color:'#8a6d3b'},
-  {k:'pin', code:'PİN', name:'PINNING', d:[25,34], room:[16,15.5,16.5], comp:18, rh:[92,88,95], co2:[800,700,900], tin:[15.5,15,17], fan:[65,40,100], fresh:[30,10,70], gen:.6, co2g:3500, evap:10, color:'#1b5fd9'},
+  {k:'kul', code:'KUL', name:'KULUÇKA', d:[1,15], room:[22,21,23.5], comp:24.5, rh:[95,92,98], co2:[6000,5000,10000], tin:[20.5,19,22], fan:[45,30,70], fresh:[5,0,15], gen:1.2, co2g:2000, evap:0.8, color:'#7c5a3a'},
+  {k:'ort', code:'ÖRT', name:'ÖRTÜ TOPRAĞI', d:[16,23], room:[22.5,21.5,23.5], comp:24, rh:[95,92,98], co2:[4000,3000,5000], tin:[21.5,20,23], fan:[50,30,80], fresh:[8,4,25], gen:.8, co2g:2400, evap:1, color:'#5b6470'},
+  {k:'rak', code:'RAK', name:'RAKING', d:[24,24], room:[22.5,21.5,23.5], comp:24, rh:[95,92,98], co2:[4000,3000,5000], tin:[21.5,20,23], fan:[50,30,80], fresh:[8,4,25], gen:.8, co2g:2400, evap:1, color:'#8a6d3b'},
+  {k:'pin', code:'PİN', name:'PINNING', d:[25,34], room:[16,15.5,16.5], comp:18, rh:[92,88,95], co2:[800,700,900], tin:[15.5,15,17], fan:[65,40,100], fresh:[30,10,70], gen:.6, co2g:1400, evap:4, color:'#1b5fd9'},
   Object.assign({k:'f1', code:'F1', name:'1. FLAŞ', d:[35,40], color:'#15803d'}, FLUSH),
-  {k:'ara', code:'ARA', name:'ARA (DİNLENME)', d:[41,44], room:[18,17,19], comp:19.5, rh:[90,87,93], co2:[1200,1000,1500], tin:[17,16,18], fan:[55,40,90], fresh:[20,10,50], gen:.4, co2g:3000, evap:9, color:'#6a7fa4', sub:true},
+  {k:'ara', code:'ARA', name:'ARA (DİNLENME)', d:[41,44], room:[18,17,19], comp:19.5, rh:[90,87,93], co2:[1200,1000,1500], tin:[17,16,18], fan:[55,40,90], fresh:[20,10,50], gen:.4, co2g:1200, evap:3.6, color:'#6a7fa4', sub:true},
   Object.assign({k:'f2', code:'F2', name:'2. FLAŞ', d:[45,50], color:'#0f766e'}, FLUSH),
   {k:'bos', code:'BOŞ', name:'BOŞALTMA', d:[51,52], cook:true, comp:25, fan:[60,30,100], gen:0, co2g:0, evap:0, color:'#b45309'},
 ];
