@@ -26,6 +26,11 @@ body{background:var(--ground);color:var(--ink);font-family:var(--f-ui);font-size
 .brand{display:flex;flex-direction:column;gap:4px}
 .credit{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .credit b{color:var(--ink);font-weight:800;letter-spacing:.12em}
+.sitenav{display:flex;align-items:center;gap:4px 6px;flex-wrap:wrap;font:600 14px var(--f-ui)}
+.sitenav a{color:var(--ink-2);text-decoration:none;padding:6px 12px;border-radius:5px;border:1.5px solid transparent}
+.sitenav a:hover{border-color:var(--line)}
+.sitenav a[aria-current="page"]{background:var(--ink);color:#fff}
+.sitenav .sn-brand{font:800 16px var(--f-display);color:var(--ink);letter-spacing:.06em;margin-right:6px}
 .foot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted);padding-top:4px}
 .foot b{color:var(--ink);letter-spacing:.1em}
 .hchips{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
@@ -245,6 +250,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-o
 .mn.flash{box-shadow:0 0 0 4px rgba(27,95,217,.35)}
 .mn-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .mn-top b{font-size:15px}
+.mn-top .servo{font-weight:600;font-size:12.5px;color:var(--muted);margin-left:4px}
 .mn .seg button[data-m="man"][aria-pressed="true"]{background:var(--warn)}
 .mn-ctl{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .mn-ctl input[type=range]{flex:1;min-width:140px;accent-color:var(--blue)}
@@ -336,6 +342,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-o
 </style>
 
 <div class="wrap">
+  <nav class="sitenav" aria-label="MAKOM modülleri"><a class="sn-brand" href="./">MAKOM</a><a href="bunker.html">Faz 1 Bunker</a><a href="tunel.html" aria-current="page">Faz 2 Tünel</a><a href="oda.html">Üretim Odaları</a></nav>
   <header class="top">
     <div class="brand">
       <h1>MAKOM<span>|</span>FAZ 2 TÜNEL OTOMASYONU</h1>
@@ -438,7 +445,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-o
         <div class="mn-info num" id="mn-fan-info"></div>
       </div>
       <div class="mn" id="mn-damper">
-        <div class="mn-top"><b>TAZE HAVA DAMPERİ</b>
+        <div class="mn-top"><b>TAZE HAVA DAMPERİ <small class="servo">Belimo 20 Nm servo</small></b>
           <span class="seg mode"><button type="button" data-m="auto" aria-pressed="true">Otomatik</button><button type="button" data-m="man" aria-pressed="false">Manuel</button></span></div>
         <div class="mn-ctl">
           <input type="range" id="mn-damper-r" min="0" max="100" step="1" aria-label="Taze hava damperi açıklığı">
@@ -681,7 +688,7 @@ function buildStages(){
 
 /* ---------- simulation (stands in for PLC tags) ---------- */
 // Fan at 100%: 18 000 m³/h, 30 kW, 4000 Pa. Fan laws: Q ~ n, p ~ n², P ~ n³.
-const FAN_Q = 18000, FAN_KW = 30, FAN_PA = 4000, VFD_HZ = 50;
+const FAN_Q = 18000, FAN_KW = 30, FAN_PA = 4000, VFD_HZ = 50, FAN_RPM = 1450;
 // Air path: Ø800 header (4 m) feeds 16 × Ø160 PVC lines, 15 m each, under a 4 × 15 m floor.
 const HDR_D = 0.8, PIPE_D = 0.16, PIPES = 16, FLOOR_M2 = 4*15;
 const BASE_OFF = [0.3,-0.4,0.6,-0.2];
@@ -875,7 +882,7 @@ function render(){
   setT('k-vel', H ? '—' : fmt(vHdr,1));
   setT('k-vel-sub', `Ø800 ana flanş · boru içi ${H ? '—' : fmt(vPipe,1)} m/s (16 × Ø160)`);
   setT('k-pow', H ? '—' : fmt(FAN_KW*(s.fan/100)**3,1));
-  setT('k-pow-sub', `%100 = ${FAN_KW} kW · anlık %${H ? '—' : fmt(s.fan,0)} · VLT FC 102 ${H ? '—' : fmt(s.fan/100*VFD_HZ,1)} Hz`);
+  setT('k-pow-sub', `%100 = ${FAN_KW} kW, ${fmt(FAN_RPM,0)} d/dk · anlık ${H ? '—' : fmt(FAN_RPM*s.fan/100,0)} d/dk · VLT FC 102 ${H ? '—' : fmt(s.fan/100*VFD_HZ,1)} Hz`);
   setT('k-energy', H ? '—' : fmt(s.energy,0));
   setT('k-energy-sub', `Ton başına ${H ? '—' : fmt(s.energy/T.t,2)} kWh/t · ${fmt(T.t, T.t % 1 ? 1 : 0)} t${T.def ? ' (varsayılan)' : ''}`);
   setT('c-in-sp', H || s.inletSp==null ? '—' : fmt(s.inletSp)); setT('c-in-rt', H || s.inletSp==null ? '± —' : fmtS(s.compRate));
@@ -1025,8 +1032,8 @@ function renderMobile(){
 }
 
 /* ---------- fan sound (Web Audio; browsers allow it only after a click) ---------- */
-// Air rush = filtered noise that opens up with speed; blade-pass tone ≈ 296 Hz at 50 Hz
-// (≈1480 rpm × 12 blades / 60); motor hum at twice the VFD output frequency.
+// Air rush = filtered noise that opens up with speed; blade-pass tone ≈ 290 Hz at 50 Hz
+// (1450 rpm × 12 blades / 60); motor hum at twice the VFD output frequency.
 let audio = null;
 function startSound(){
   const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
@@ -1050,7 +1057,7 @@ function updateSound(){
   const r = hide ? 0 : clamp(s.fan/100, 0, 1), t = audio.ctx.currentTime, tc = 0.3, live = r > 0.005;
   audio.lp.frequency.setTargetAtTime(220 + 2400*r, t, tc);
   audio.nGain.gain.setTargetAtTime(live ? 0.04 + 0.4*r**1.5 : 0, t, tc);
-  audio.blade.frequency.setTargetAtTime(Math.max(20, 296*r), t, tc);
+  audio.blade.frequency.setTargetAtTime(Math.max(20, FAN_RPM*12/60*r), t, tc);
   audio.bGain.gain.setTargetAtTime(live ? 0.05*r**2 : 0, t, tc);
   audio.hum.frequency.setTargetAtTime(Math.max(20, 2*VFD_HZ*r), t, tc);
   audio.hGain.gain.setTargetAtTime(live ? 0.06*r : 0, t, tc);

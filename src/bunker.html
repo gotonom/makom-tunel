@@ -1,0 +1,953 @@
+<title>Makom Faz 1 Bunker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: control-room HMI for three Phase I bunkers — bunker overview, side-section mimic, PLC fan cycle, probe rates, recipe */
+:root{
+  --ground:#e8f0f9; --panel:#f6faff; --card:#ffffff; --line:#b7cfeb; --line-2:#d5e4f5;
+  --ink:#0a2463; --ink-2:#34507f; --muted:#6a7fa4; --tint:#eaf3fd;
+  --navy:#0d3b8c; --blue:#1b5fd9; --blue-2:#0b46b5; --flow:#2f7de8;
+  --ok:#15803d; --ok-bg:#e9f7ee; --warn:#d97706; --warn-bg:#fff4e5; --crit:#dc2626; --crit-bg:#fdecec;
+  --r6:#f59e0b; --r7:#dc2626;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-ui:"Barlow Semi Condensed","Segoe UI",Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--f-ui);font-size:15px}
+.wrap{max-width:1680px;margin:0 auto;padding-block:12px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:10px}
+.num{font-variant-numeric:tabular-nums}
+button,select,input{font:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+/* site nav */
+.sitenav{display:flex;align-items:center;gap:4px 6px;flex-wrap:wrap;font:600 14px var(--f-ui)}
+.sitenav a{color:var(--ink-2);text-decoration:none;padding:6px 12px;border-radius:5px;border:1.5px solid transparent}
+.sitenav a:hover{border-color:var(--line)}
+.sitenav a[aria-current="page"]{background:var(--ink);color:#fff}
+.sitenav .sn-brand{font:800 16px var(--f-display);color:var(--ink);letter-spacing:.06em;margin-right:6px}
+
+/* header */
+.top{display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;justify-content:space-between}
+.brand{display:flex;flex-direction:column;gap:4px}
+.top h1{margin:0;font-family:var(--f-display);font-weight:800;font-size:clamp(26px,3.2vw,46px);letter-spacing:.01em;line-height:1;text-wrap:balance}
+.top h1 span{color:var(--blue);font-weight:600;margin:0 .15em}
+.credit{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.credit b{color:var(--ink);font-weight:800;letter-spacing:.12em}
+.hchips{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+.chip{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:6px;background:var(--card);min-height:44px}
+.chip .k{background:var(--blue);color:#fff;font-weight:700;font-size:14px;letter-spacing:.04em;padding:0 12px;align-self:stretch;display:flex;align-items:center;border-radius:4px 0 0 4px;white-space:nowrap}
+.chip.pair input{font:700 24px var(--f-display);color:var(--ink);width:80px;text-align:center;border:0;background:transparent;outline:none;min-width:0}
+.chip.pair input::placeholder{color:var(--ink)}
+.bsel{display:flex;align-self:stretch}
+.bsel button{min-width:46px;border:0;border-left:1.5px solid var(--line);background:var(--card);font:700 22px var(--f-display);color:var(--ink);cursor:pointer}
+.bsel button:last-child{border-radius:0 4px 4px 0}
+.bsel button[aria-pressed="true"]{background:var(--blue-2);color:#fff}
+.chip.status{gap:8px;padding:0 14px;background:#eef8ee;border-color:#a9d7b0;color:#14532d;font-weight:700;font-size:15px;letter-spacing:.02em}
+.chip.status svg{width:22px;height:22px;flex:none}
+.chip.status.idle{background:var(--panel);border-color:var(--line);color:var(--muted)}
+.chip.status.stopped{background:var(--warn-bg);border-color:#f3c98b;color:#92400e}
+.chip.status.fault{background:var(--crit-bg);border-color:#f1a7a7;color:var(--crit)}
+.chip.status.fill{background:var(--tint);border-color:var(--line);color:var(--blue-2)}
+.chip.clock{flex-direction:column;justify-content:center;padding:2px 14px;line-height:1.05}
+.chip.clock small{font-size:12px;font-weight:700;color:var(--ink-2);letter-spacing:.06em}
+.chip.clock b{font-family:var(--f-display);font-size:22px}
+.chip.alarm{gap:8px;padding:0 14px;border-color:#f1a7a7;background:var(--crit-bg);color:var(--crit);cursor:pointer}
+.chip.alarm svg{width:26px;height:26px}
+.chip.alarm div{display:flex;flex-direction:column;align-items:center;line-height:1.05}
+.chip.alarm small{font-size:12px;font-weight:700;letter-spacing:.06em}
+.chip.alarm b{font-family:var(--f-display);font-size:24px}
+.chip.alarm.on{background:var(--crit);border-color:var(--crit);color:#fff}
+.chip.alarm.warnon{background:var(--warn);border-color:var(--warn);color:#fff}
+.chip.sound{gap:8px;padding:0 12px;font:700 14px var(--f-ui);letter-spacing:.03em;color:var(--ink);cursor:pointer}
+.chip.sound svg{width:20px;height:20px}
+.chip.sound[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+.demo-tag{font-size:11px;font-weight:700;letter-spacing:.08em;color:#fff;background:var(--warn);border-radius:3px;padding:2px 6px;align-self:center}
+
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:8px}
+.row{display:grid;gap:10px}
+h2.sec{margin:0;font:800 22px var(--f-display);letter-spacing:.01em;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+h2.sec span{color:var(--blue);font-size:18px;font-weight:700}
+h2.sec small{font:500 14px var(--f-ui);color:var(--ink-2)}
+
+/* bunker overview */
+.ov{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.ovb{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:4px 12px;text-align:left;padding:10px 14px;border:1.5px solid var(--line);border-radius:8px;background:var(--card);cursor:pointer;color:var(--ink)}
+.ovb:hover{border-color:var(--blue)}
+.ovb[aria-pressed="true"]{border-color:var(--blue-2);box-shadow:inset 0 0 0 1.5px var(--blue-2);background:var(--tint)}
+.ovb .bn{grid-row:span 2;font:800 30px var(--f-display);color:var(--blue-2);line-height:1}
+.ovb .st{font-weight:700;font-size:14px;letter-spacing:.03em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ovb .tp{font:700 24px var(--f-display);text-align:right}
+.ovb .fn{font-size:13px;color:var(--ink-2);display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ovb .al{grid-column:3;text-align:right;font-size:12px;font-weight:700}
+.dot{width:9px;height:9px;border-radius:50%;background:#9aa8bf;flex:none}
+.dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(21,128,61,.18)}
+.dot.bad{background:var(--crit)}
+
+/* input analysis */
+.ana{display:flex;gap:14px 18px;align-items:center;padding:10px 16px;flex-wrap:wrap}
+.ana .ti{display:flex;gap:12px;align-items:center;min-width:260px;flex:1 1 300px}
+.ana .ti svg{width:38px;height:46px;flex:none}
+.ana .ti b{display:block;font:800 22px var(--f-display);color:var(--blue-2)}
+.ana .ti span{font-size:14px;color:var(--ink-2)}
+.ana .fields{display:grid;grid-template-columns:repeat(5,minmax(96px,1fr));gap:10px;flex:3 1 560px}
+.af{display:flex;flex-direction:column;gap:3px}
+.af>span{font-weight:600;font-size:14px}
+.af small{font-size:11.5px;color:var(--muted)}
+.ipv{display:flex;align-items:center;gap:4px;border:1.5px solid var(--line);background:var(--card);border-radius:4px;padding:0 8px;height:36px}
+.ipv input,.ipv select{width:100%;min-width:0;border:0;outline:none;background:transparent;font:700 20px var(--f-display);color:var(--ink);text-align:right}
+.ipv select{text-align:left;font-size:16px}
+.ipv input::placeholder{color:var(--ink)}
+.ipv i{font-style:normal;font:700 18px var(--f-display)}
+.ipv:focus-within{border-color:var(--blue);box-shadow:0 0 0 2px rgba(27,95,217,.18)}
+.ipv.locked{background:var(--panel)}
+.ipv.locked input{color:var(--ink-2)}
+
+/* mimic */
+.mimic{background:linear-gradient(#f3f8fe,#e4eef9);border:1.5px solid var(--line);border-radius:8px;overflow:hidden}
+.mimic-scroll{overflow-x:auto}
+#mimic{display:block;width:100%;min-width:980px;height:auto}
+#mimic text{font-family:var(--f-ui)}
+.sb-bg{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+.sb-hd{fill:var(--tint)}
+.sb-lb{font-weight:700;font-size:13px;fill:var(--ink);text-anchor:middle}
+.sb-v{font-family:var(--f-display)!important;font-weight:700;font-size:21px;fill:var(--ink);text-anchor:middle}
+.sb-v.big{font-size:28px}
+.sb-v .u{font-weight:600}
+.sbox.dark .sb-hd{fill:var(--navy)}
+.sbox.dark .sb-lb{fill:#fff;font-size:12.5px}
+.sbox.dev .sb-bg{stroke:var(--warn);stroke-width:2.5}
+.sbox.dev .sb-hd{fill:var(--warn-bg)}
+.sbox.dev .sb-v{fill:var(--warn)}
+.sbox.alarm .sb-bg{stroke:var(--crit);stroke-width:2.5}
+.sbox.alarm .sb-hd{fill:var(--crit-bg)}
+.sbox.dark.alarm .sb-hd{fill:var(--crit)}
+.sbox.alarm .sb-v{fill:var(--crit)}
+.tag-lbl{font-family:var(--f-display)!important;font-weight:700;font-size:20px;fill:var(--ink);letter-spacing:.02em}
+.probe{stroke:#2b3442;stroke-width:3}
+.probe-tip{fill:#2b3442}
+.flow{fill:var(--flow);stroke:#fff;stroke-width:1.5;paint-order:stroke}
+.spig{stroke:var(--flow);stroke-width:3;fill:none}
+.spig-h{fill:var(--flow)}
+svg.running .flow,svg.running .spig-g{animation:flowp 1.4s ease-in-out infinite}
+svg:not(.running) .flow,svg:not(.running) .spig-g{opacity:.18}
+@keyframes flowp{0%,100%{opacity:.35}50%{opacity:1}}
+#rotor{transform-box:view-box;transform-origin:150px 372px;animation:spin .5s linear infinite}
+svg:not(.running) #rotor{animation-play-state:paused}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mimic-hint,.msens{display:none}
+
+/* KPIs */
+.kpis{grid-template-columns:repeat(6,minmax(0,1fr))}
+.kpi{display:flex;align-items:center;gap:12px;padding:10px 14px;min-width:0}
+.kpi .ic{flex:none;width:52px;height:52px;display:grid;place-items:center;background:var(--tint);border-radius:6px}
+.kpi .ic svg{width:32px;height:32px}
+.kpi .tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi .lb{font-weight:700;font-size:14px;letter-spacing:.02em}
+.kpi .vl{font:700 30px var(--f-display);line-height:1}
+.kpi .vl small{font-size:.75em}
+.kpi .sub{font-size:12.5px;color:var(--ink-2);line-height:1.25}
+.kpi.mode .vl{color:var(--ok)}
+.kpi.mode.man .vl{color:var(--warn)}
+
+/* settings */
+.settings{padding:10px 14px 12px;display:flex;flex-direction:column;gap:10px}
+.set-head{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap}
+.set-head .lock{margin-left:auto}
+.set-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.set{display:flex;flex-direction:column;gap:4px;padding:8px 10px;border:1.5px solid var(--line-2);border-radius:6px;background:var(--panel);min-width:0}
+.set>span{font-weight:700;font-size:13.5px;letter-spacing:.02em}
+.set small{font-size:12px;color:var(--muted)}
+.set small.warn{color:var(--warn);font-weight:600}
+.btn{font:600 14px var(--f-ui);color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:5px;padding:6px 12px;cursor:pointer;min-height:36px}
+.btn:hover{border-color:var(--blue)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn[aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* PLC fan cycle */
+.cyc-row{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
+.cyc{padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.cyc-state{display:flex;align-items:baseline;gap:8px 14px;flex-wrap:wrap}
+.cyc-state b{font:800 30px var(--f-display);line-height:1}
+.cyc-state b.on{color:var(--ok)}
+.cyc-state b.off{color:var(--ink-2)}
+.cyc-state b.bad{color:var(--crit)}
+.cyc-state span{font-size:15px;color:var(--ink-2)}
+.cbar{position:relative;height:30px;border-radius:5px;background:repeating-linear-gradient(90deg,var(--tint) 0 calc(100%/30 - 1px),#dbe7f6 calc(100%/30 - 1px) calc(100%/30));border:1.5px solid var(--line);overflow:hidden}
+.cbar .on{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#2f7de8,#1b5fd9)}
+.cbar .ext{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,rgba(245,158,11,.85) 0 6px,rgba(245,158,11,.55) 6px 12px)}
+.cbar .cap{position:absolute;top:-2px;bottom:-2px;width:3px;background:var(--crit)}
+.cbar .mk{position:absolute;top:-4px;bottom:-4px;width:3px;background:var(--ink);box-shadow:0 0 0 2px #fff}
+.cscale{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.cmeta{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:14px;color:var(--ink-2)}
+.cmeta b{color:var(--ink)}
+.plc{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;letter-spacing:.03em;color:var(--crit);border:1.5px solid #f1a7a7;background:var(--crit-bg);border-radius:4px;padding:2px 8px}
+.manctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.manctl[hidden]{display:none}
+.stats{padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.ratio{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.ratio b{font:800 40px var(--f-display);line-height:1}
+.ratio b.low{color:var(--warn)}
+.ratio span{color:var(--ink-2);font-size:14px}
+.rbar{position:relative;height:10px;border-radius:5px;background:var(--tint);border:1px solid var(--line-2);overflow:hidden}
+.rbar i{position:absolute;inset:0 auto 0 0;background:var(--blue)}
+.rbar em{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);left:90%}
+.hist{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:3px;align-items:end;height:46px}
+.hist i{display:block;border-radius:2px 2px 0 0;background:var(--blue)}
+.hist i.r6{background:var(--r6)}
+.hist i.r7{background:var(--r7)}
+.hist i.r0{background:#c5d3e6}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+
+/* probe rates */
+.rates{padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.rgrid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px}
+.rc{border:1.5px solid var(--line);border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;background:var(--panel);min-width:0}
+.rc span{font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--ink-2)}
+.rc b{font:700 22px var(--f-display)}
+.rc em{font-style:normal;font:700 17px var(--f-display);display:flex;align-items:center;gap:4px}
+.rc em.up{color:var(--crit)}
+.rc em.dn{color:var(--blue)}
+.rc em.fl{color:var(--muted)}
+.rc.dev{border-color:var(--warn);background:var(--warn-bg)}
+.rc.dev b{color:var(--warn)}
+.rsum{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:14px;color:var(--ink-2)}
+.rsum b{font:700 19px var(--f-display);color:var(--ink)}
+
+/* stages */
+.stage-row{grid-template-columns:minmax(0,1fr) 240px 230px}
+.recipe{padding:10px 14px 12px;display:flex;flex-direction:column;gap:8px}
+.stages{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:22px}
+.stg{position:relative;display:flex;gap:10px;align-items:center;padding:10px;border:1.5px solid var(--line);border-radius:6px;background:var(--panel);font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%}
+.stg:hover{border-color:var(--blue)}
+.stg:not(:last-child)::after{content:"";position:absolute;right:-19px;top:50%;width:16px;height:12px;transform:translateY(-50%);background:var(--blue);clip-path:polygon(0 40%,55% 40%,55% 0,100% 50%,55% 100%,55% 60%,0 60%)}
+.stg .no{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#8696ae;color:#fff;font:700 20px var(--f-display);border:2.5px solid #d6deea}
+.stg .bd{display:flex;flex-direction:column;gap:1px;min-width:0}
+.stg .nm{font:700 15.5px var(--f-display);color:var(--blue-2);letter-spacing:.02em}
+.stg .ln{font-size:13px;color:var(--ink-2)}
+.stg .rs{font-size:12px;font-weight:700;color:var(--ok)}
+.stg.done .no{background:var(--ok);border-color:#bfe3c9}
+.stg.active{background:var(--blue);border-color:var(--blue-2)}
+.stg.active .no{background:#fff;color:var(--blue);border-color:#9ec0f5}
+.stg.active .nm,.stg.active .ln{color:#fff}
+.stg.active .rs{color:#dbe8ff}
+.act{background:var(--navy);border-color:var(--navy);color:#fff;padding:12px 16px;display:flex;flex-direction:column;gap:6px}
+.act small{font-size:12.5px;font-weight:700;letter-spacing:.06em;opacity:.85}
+.act b{font:800 24px var(--f-display);line-height:1.05}
+.act span{font-size:14px;opacity:.9}
+.act .btn{align-self:flex-start;margin-top:4px}
+.el{padding:12px 16px;display:flex;flex-direction:column;gap:4px;justify-content:center}
+.el small{font-size:12.5px;font-weight:700;letter-spacing:.05em}
+.el b{font:800 32px var(--f-display);line-height:1}
+.el span{font-size:13.5px;color:var(--ink-2)}
+.pbar{height:6px;border-radius:3px;background:var(--tint);overflow:hidden;margin-top:4px}
+.pbar i{display:block;height:100%;background:var(--blue);width:0}
+
+/* alarms */
+.alarms{padding:12px 14px 14px;display:flex;flex-direction:column;gap:10px;scroll-margin-top:12px}
+.al-head{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap}
+.al-head .hint{color:var(--ink-2);font-size:14px}
+.al-head .btn{margin-left:auto}
+.al-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px}
+.sc-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-content:start}
+.sc{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:8px 74px 8px 12px;border:1.5px solid var(--line);border-radius:6px;background:var(--panel);cursor:pointer;color:var(--ink);min-height:52px}
+.sc b{font-size:15px}
+.sc span{font-size:13px;color:var(--ink-2)}
+.sc .sev{position:absolute;top:9px;right:9px}
+.sc:hover{border-color:var(--blue)}
+.sc.crit[aria-pressed="true"]{border-color:var(--crit);background:var(--crit-bg);box-shadow:inset 0 0 0 1px var(--crit)}
+.sc.warn[aria-pressed="true"]{border-color:var(--warn);background:var(--warn-bg);box-shadow:inset 0 0 0 1px var(--warn)}
+.sev{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:3px;color:#fff;background:var(--warn);white-space:nowrap}
+.sev.crit{background:var(--crit)}
+.sev.info{background:var(--blue)}
+.al-active{border:1.5px solid var(--line);border-radius:6px;background:var(--panel);padding:8px 12px 10px;min-width:0}
+.al-active h3{margin:0 0 8px;font:700 18px var(--f-display);display:flex;gap:8px;align-items:center}
+.aln{min-width:24px;text-align:center;background:var(--ink);color:#fff;border-radius:10px;font-size:14px;padding:0 7px}
+#alList{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+#alList li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;align-items:baseline;padding:7px 10px;border-radius:5px;background:var(--card);border:1px solid var(--line-2);border-left:4px solid var(--warn)}
+#alList li.crit{border-left-color:var(--crit);background:#fff8f8}
+#alList li.info{border-left-color:var(--blue)}
+#alList li b{font-size:14.5px}
+#alList li small{font-size:12px;color:var(--muted)}
+#alList li span{font-size:13px;color:var(--ink-2)}
+#alList li.none{display:block;border-left-color:var(--ok);color:var(--ok);font-weight:600}
+
+.demo{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding:8px 14px;font-size:14px;color:var(--ink-2);background:var(--panel);border-style:dashed}
+.demo b{color:var(--ink)}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:5px;overflow:hidden}
+.seg button{font:600 14px var(--f-ui);color:var(--ink);background:var(--card);border:0;padding:6px 11px;cursor:pointer;min-height:34px}
+.seg button+button{border-left:1.5px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--blue);color:#fff}
+.foot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted);padding-top:4px}
+.foot b{color:var(--ink);letter-spacing:.1em}
+
+/* responsive */
+@media (max-width:1280px){
+  .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .set-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .rgrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .stage-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .stage-row .recipe{grid-column:1/-1}
+}
+@media (max-width:900px){
+  #mimic{min-width:900px}
+  .mimic-hint{display:block;font-size:12.5px;font-weight:600;color:var(--muted);padding:8px 12px 0}
+  .msens{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;padding:10px 12px 12px;border-top:1.5px solid var(--line-2)}
+  .ms{display:flex;flex-direction:column;gap:1px;background:var(--card);border:1.5px solid var(--line);border-radius:6px;padding:6px 10px;min-width:0}
+  .ms span{font-size:11.5px;font-weight:700;letter-spacing:.04em;color:var(--ink-2)}
+  .ms b{font:700 20px var(--f-display);font-variant-numeric:tabular-nums}
+  .ms.dev{border-color:var(--warn);background:var(--warn-bg)}
+  .ms.alarm{border-color:var(--crit);background:var(--crit-bg)}
+  .cyc-row,.al-grid{grid-template-columns:1fr}
+  .al-active{order:-1}
+  .stages{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .stg::after{display:none}
+  .ana .fields{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:640px){
+  .top{align-items:flex-start}
+  .hchips{display:grid;grid-template-columns:1fr 1fr;width:100%;gap:8px}
+  .hchips>*{min-width:0}
+  .chip .k{font-size:12.5px;padding:0 8px}
+  .chip.pair input{flex:1;width:auto}
+  .bsel{flex:1}
+  .bsel button{flex:1;min-width:0}
+  .chip.bunker,.chip.pair{grid-column:1/-1}
+  .ovb .fn{white-space:normal;align-items:flex-start;font-size:12px}
+  .chip.status{grid-column:1/-1;justify-content:center;font-size:14px;text-align:center;padding:6px 10px;white-space:normal}
+  .demo-tag{justify-self:start}
+  .chip.sound,.chip.alarm{justify-content:center}
+  .ov{gap:6px}
+  .ovb{grid-template-columns:minmax(0,1fr);padding:8px 10px;gap:2px}
+  .ovb .bn{grid-row:auto;font-size:24px}
+  .ovb .tp,.ovb .al{grid-column:auto;text-align:left}
+  .ovb .tp{font-size:20px}
+  .ovb .st{font-size:12px;white-space:normal}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpi{flex-direction:column;align-items:flex-start;gap:6px;padding:10px 12px}
+  .kpi .ic{width:40px;height:40px}
+  .kpi .ic svg{width:24px;height:24px}
+  .kpi .vl{font-size:26px}
+  .set-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stages{grid-template-columns:1fr}
+  .stage-row{grid-template-columns:1fr}
+  .ana .fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sc-list{grid-template-columns:1fr}
+  .al-head .btn,.set-head .lock{margin-left:0}
+  .hist{height:38px;gap:2px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <nav class="sitenav" aria-label="MAKOM modülleri"><a class="sn-brand" href="./">MAKOM</a><a href="bunker.html" aria-current="page">Faz 1 Bunker</a><a href="tunel.html">Faz 2 Tünel</a><a href="oda.html">Üretim Odaları</a></nav>
+
+  <header class="top">
+    <div class="brand">
+      <h1>MAKOM<span>|</span>FAZ 1 BUNKER OTOMASYONU</h1>
+      <span class="credit">created by <b>GOTONOM</b></span>
+    </div>
+    <div class="hchips">
+      <div class="chip bunker"><span class="k">BUNKER NO</span><span class="bsel" id="bsel"></span></div>
+      <label class="chip pair"><span class="k">KOMPOST NO</span><input id="kompostNo" placeholder="—" aria-label="Kompost numarası" autocomplete="off"></label>
+      <div class="chip status" id="statusChip">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.3 7.3 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.3 7.3 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.3 7.3 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.3 7.3 0 0 0 1.7-1l2.5 1 2-3.5zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg>
+        <span id="statusText">—</span>
+      </div>
+      <span class="demo-tag" id="demoTag">DEMO VERİ</span>
+      <button type="button" class="chip sound" id="soundBtn" aria-pressed="false" title="Fan sesini aç/kapat">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span id="soundLbl">FAN SESİ</span>
+      </button>
+      <div class="chip clock"><small id="dateLbl">TARİH</small><b class="num" id="clock">00:00:00</b></div>
+      <div class="chip alarm" id="alarmChip" role="button" tabindex="0">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.4-2h-4.8a2.5 2.5 0 0 0 2.4 2zm7-6V11a7 7 0 0 0-5.5-6.8V3a1.5 1.5 0 0 0-3 0v1.2A7 7 0 0 0 5 11v5l-2 2v1h18v-1z"/></svg>
+        <div><small>ALARMLAR</small><b class="num" id="alarmCount">0</b></div>
+      </div>
+    </div>
+  </header>
+
+  <section class="ov" id="overview" aria-label="Bunker özeti"></section>
+
+  <section class="card ana" aria-label="Kompost giriş analizi">
+    <div class="ti">
+      <svg viewBox="0 0 40 48" fill="none" stroke="var(--ink)" stroke-width="3" aria-hidden="true"><rect x="3" y="6" width="34" height="39" rx="3"/><rect x="12" y="2" width="16" height="8" rx="2" fill="var(--card)"/><path d="M10 20h20M10 28h20M10 36h13"/></svg>
+      <div><b>KOMPOST GİRİŞ ANALİZİ</b><span>Parti başlangıç kaydı · laboratuvar / operatör girişi · <span id="anaB">B1</span></span></div>
+    </div>
+    <div class="fields">
+      <label class="af"><span>Giriş nemi</span><span class="ipv"><input id="a-nem" inputmode="decimal" placeholder="—" autocomplete="off"><i>%</i></span></label>
+      <label class="af"><span>Toplam azot (N)</span><span class="ipv"><input id="a-n" inputmode="decimal" placeholder="—" autocomplete="off"><i>%</i></span><small>Baz: kuru madde</small></label>
+      <label class="af"><span>Giriş pH</span><span class="ipv"><input id="a-ph" inputmode="decimal" placeholder="—" autocomplete="off"></span></label>
+      <label class="af"><span>Giriş sıcaklığı</span><span class="ipv"><input id="a-isi" inputmode="decimal" placeholder="—" autocomplete="off"><i>°C</i></span></label>
+      <label class="af"><span>Tonaj</span><span class="ipv"><input id="a-ton" inputmode="decimal" placeholder="250" autocomplete="off"><i>t</i></span></label>
+    </div>
+  </section>
+
+  <section class="mimic" aria-label="Bunker proses şeması">
+    <div class="mimic-hint">Şemayı yana kaydırın · tüm ölçümler aşağıda</div>
+    <div class="mimic-scroll">
+      <svg id="mimic" class="running" viewBox="0 0 1640 470" role="img" aria-label="Taze hava, fan, basınç ölçümü, spigot taban ve kompost yığını">
+        <defs>
+          <linearGradient id="gH" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4faff"/><stop offset=".45" stop-color="#c6e3fb"/><stop offset="1" stop-color="#80b7e7"/></linearGradient>
+          <linearGradient id="gConc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dcd8d2"/><stop offset="1" stop-color="#a9a49d"/></linearGradient>
+          <linearGradient id="gWall" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e3e0db"/><stop offset="1" stop-color="#cfcac3"/></linearGradient>
+          <linearGradient id="gPipe" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fafbfc"/><stop offset=".5" stop-color="#d5dbe1"/><stop offset="1" stop-color="#9aa5b0"/></linearGradient>
+          <radialGradient id="gFan" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#5b9bff"/><stop offset="1" stop-color="#1238a6"/></radialGradient>
+          <pattern id="pCompost" width="44" height="30" patternUnits="userSpaceOnUse"><rect width="44" height="30" fill="#6b3d1f"/><g id="compostDots"></g></pattern>
+        </defs>
+        <g id="gen"></g>
+      </svg>
+    </div>
+    <div class="msens" id="msens" aria-label="Anlık ölçümler"></div>
+  </section>
+
+  <div class="row kpis">
+    <div class="card kpi"><div class="ic"><svg viewBox="0 0 40 40" fill="none" stroke="var(--ink)" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M4 14h20a5 5 0 1 0-5-5M4 21h28a5 5 0 1 1-5 5M4 28h12"/></svg></div><div class="tx"><span class="lb">HAVA DEBİSİ</span><span class="vl num"><span id="k-q">—</span> <small>m³/h</small></span><span class="sub num" id="k-q-sub"></span></div></div>
+    <div class="card kpi"><div class="ic"><svg viewBox="0 0 40 40" fill="none" stroke="var(--ink)" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 12h18a5 5 0 1 0-5-5M2 19h30a5 5 0 1 1-5 5M8 26h14a4 4 0 1 1-4 4"/></svg></div><div class="tx"><span class="lb">KANAL HAVA HIZI</span><span class="vl num"><span id="k-v">—</span> <small>m/s</small></span><span class="sub" id="k-v-sub"></span></div></div>
+    <div class="card kpi"><div class="ic"><svg viewBox="0 0 40 40" fill="var(--ink)" aria-hidden="true"><circle cx="20" cy="20" r="3.5"/><path d="M20 16c-2-6 0-11 4-11s5 6-1 11zM24 20c6-2 11 0 11 4s-6 5-11-1zM20 24c2 6 0 11-4 11s-5-6 1-11zM16 20c-6 2-11 0-11-4s6-5 11 1z"/></svg></div><div class="tx"><span class="lb">FAN HIZI</span><span class="vl num"><span id="k-f">—</span> <small>%</small></span><span class="sub num" id="k-f-sub"></span></div></div>
+    <div class="card kpi"><div class="ic"><svg viewBox="0 0 40 40" fill="var(--ink)" aria-hidden="true"><path d="M23 3 9 23h9l-3 14 15-21h-9z"/></svg></div><div class="tx"><span class="lb">FAN GÜCÜ</span><span class="vl num"><span id="k-p">—</span> <small>kW</small></span><span class="sub num" id="k-p-sub"></span></div></div>
+    <div class="card kpi"><div class="ic"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="none" stroke="var(--ink)" stroke-width="2.6" stroke-dasharray="80 10"/><path d="M22 8 12 22h7l-2 10 11-15h-7z" fill="var(--ink)"/></svg></div><div class="tx"><span class="lb">TOPLAM ENERJİ</span><span class="vl num"><span id="k-e">—</span> <small>kWh</small></span><span class="sub num" id="k-e-sub"></span></div></div>
+    <div class="card kpi mode" id="k-mode-card"><div class="ic"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="var(--ok)"/><path d="M16 12v16l12-8z" fill="#fff"/></svg></div><div class="tx"><span class="lb">ÇALIŞMA DURUMU</span><span class="vl" id="k-mode">OTOMATİK</span><span class="sub" id="k-mode-sub">Manuel / Otomatik</span></div></div>
+  </div>
+
+  <section class="card settings" aria-label="Proses ayarları">
+    <div class="set-head">
+      <h2 class="sec">PROSES AYARLARI <small id="setFor">B1 · Fermentasyon 2</small></h2>
+      <button type="button" class="btn lock" id="lockBtn" aria-pressed="false">🔒 Yönetici kilidi: kapalı</button>
+    </div>
+    <div class="set-grid">
+      <label class="set"><span>FAN ÇALIŞMA SÜRESİ</span><span class="ipv locked"><input id="s-run" inputmode="numeric" disabled><i>dk</i></span><small id="s-run-note">Otomatik aralık 5–7 dk</small></label>
+      <label class="set"><span>FAN DURMA SÜRESİ</span><span class="ipv locked"><input id="s-stop" inputmode="numeric" disabled><i>dk</i></span><small>Fan hızı %100</small></label>
+      <label class="set"><span>HEDEF SICAKLIK</span><span class="ipv locked"><input id="s-sp" inputmode="decimal" disabled><i>°C</i></span><small>Ortalama, geçerli problar</small></label>
+      <label class="set"><span>ÜST LİMİT</span><span class="ipv locked"><input id="s-up" inputmode="decimal" disabled><i>°C</i></span><small>Aşılırsa süre uzar</small></label>
+      <label class="set"><span>ALT LİMİT</span><span class="ipv locked"><input id="s-lo" inputmode="decimal" disabled><i>°C</i></span><small>Altında uyarı</small></label>
+      <label class="set"><span>ÇALIŞMA MODU</span><span class="ipv"><select id="s-mode"><option value="auto">OTOMATİK</option><option value="manual">MANUEL</option></select></span><small id="s-mode-note">Dolum ve boşaltma etapla gelir</small></label>
+    </div>
+  </section>
+
+  <div class="row cyc-row">
+    <section class="card cyc" aria-label="Fan çevrimi">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <h2 class="sec">FAN ÇEVRİMİ <span>• PLC</span></h2>
+        <span class="plc">PLC DONANIM SINIRI · MAKS. 7 DK KESİNTİSİZ</span>
+      </div>
+      <div class="cyc-state"><b id="cState" class="on">—</b><span id="cLeft" class="num"></span></div>
+      <div class="cbar" id="cbar"><span class="on" id="cOn"></span><span class="ext" id="cExt"></span><span class="cap" id="cCap"></span><span class="mk" id="cMk"></span></div>
+      <div class="cscale num"><span>0</span><span id="cMid"></span><span id="cEnd"></span></div>
+      <div class="cmeta"><span>Karar: <b id="cWhy">—</b></span><span>Bu çevrim: <b id="cRun" class="num">—</b></span><span>7 dk'da art arda: <b id="c7" class="num">0</b></span></div>
+      <div class="manctl" id="manCtl" hidden>
+        <button type="button" class="btn primary" id="manOn">Fanı çalıştır</button>
+        <button type="button" class="btn" id="manOff">Fanı durdur</button>
+        <span style="font-size:13px;color:var(--ink-2)" id="manNote">Manuel modda da fan 7 dakikada PLC tarafından durdurulur.</span>
+      </div>
+    </section>
+    <section class="card stats" aria-label="Çevrim istatistiği">
+      <h2 class="sec">5 DK ÇEVRİM ORANI <small>son 24 saat</small></h2>
+      <div class="ratio"><b id="rPct" class="num">—</b><span id="rTxt">Hedef ≈ %90 · işletme hedefi, kota değil</span></div>
+      <div class="rbar"><i id="rBar"></i><em title="%90 hedef"></em></div>
+      <div class="hist" id="hist" aria-label="Son 24 çevrimin süreleri"></div>
+      <div class="legend"><span><i style="background:var(--blue)"></i>5 dk</span><span><i style="background:var(--r6)"></i>6 dk</span><span><i style="background:var(--r7)"></i>7 dk</span><span><i style="background:#c5d3e6"></i>çevrim yok</span></div>
+    </section>
+  </div>
+
+  <section class="card rates" aria-label="Sıcaklık değişim hızı">
+    <h2 class="sec">SICAKLIK DEĞİŞİM HIZI <span>• °C/saat</span> <small>8 kompost sensörü, son 60 dk</small></h2>
+    <div class="rgrid" id="rgrid"></div>
+    <div class="rsum num"><span>Ortalama <b id="rs-avg">—</b> °C</span><span>Ort. değişim <b id="rs-rate">—</b> °C/sa</span><span>Min <b id="rs-min">—</b> °C</span><span>Maks <b id="rs-max">—</b> °C</span><span>ΔT <b id="rs-dt">—</b> °C</span><span>O₂ <b id="rs-o2">—</b> %</span></div>
+  </section>
+
+  <div class="row stage-row">
+    <section class="card recipe" aria-label="Proses etapları">
+      <h2 class="sec">PROSES ETAPLARI <span>• FAZ 1 BUNKER</span> <small>simülasyonu başlatmak için bir etaba tıklayın</small></h2>
+      <div class="stages" id="stages"></div>
+    </section>
+    <section class="card act" aria-label="Aktif etap">
+      <small>AKTİF ETAP</small>
+      <b id="actName">—</b>
+      <span id="actSpan">—</span>
+      <button type="button" class="btn" id="actBtn" hidden></button>
+    </section>
+    <section class="card el" aria-label="Bu etapta geçen süre">
+      <small>BU ETAPTA GEÇEN SÜRE</small>
+      <b class="num" id="elT">—</b>
+      <span class="num" id="elGoal">—</span>
+      <div class="pbar"><i id="elBar"></i></div>
+      <span class="num" id="elTotal">—</span>
+    </section>
+  </div>
+
+  <section class="card alarms" id="alarmPanel" aria-label="Alarm senaryoları">
+    <div class="al-head">
+      <h2 class="sec">ALARM SENARYOLARI <small id="scFor">B1</small></h2>
+      <span class="hint">Seçili bunkere arıza verin ve PLC kurallarının tepkisini izleyin.</span>
+      <button type="button" class="btn" id="clearSc">Tümünü kaldır</button>
+    </div>
+    <div class="al-grid">
+      <div class="sc-list" id="scList"></div>
+      <div class="al-active"><h3>AKTİF ALARMLAR <span class="aln num" id="alN">0</span></h3><ul id="alList"></ul></div>
+    </div>
+  </section>
+
+  <div class="card demo" aria-label="Demo kontrolleri">
+    <span><b>Demo simülasyonu</b> · PLC bağlantısı kurulana kadar örnek veri, üç bunker aynı anda</span>
+    <span>Hız
+      <span class="seg" id="speedSeg">
+        <button type="button" data-s="1" aria-pressed="false">1×</button>
+        <button type="button" data-s="60" aria-pressed="true">60×</button>
+        <button type="button" data-s="600" aria-pressed="false">600×</button>
+        <button type="button" data-s="3600" aria-pressed="false">3600×</button>
+      </span>
+    </span>
+    <button type="button" class="btn" id="dataBtn" aria-pressed="false">Veriyi gizle</button>
+    <span id="demoMsg" style="color:var(--ok);font-weight:600" role="status"></span>
+  </div>
+
+  <footer class="foot"><span>MAKOM Kompost · Faz 1 Bunker Otomasyonu · 3 bunker × 18,00 × 7,20 m</span><span>Created by <b>GOTONOM</b></span></footer>
+</div>
+
+<script>
+(function(){
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
+const fmt = (v,d=1) => (v==null || !isFinite(v)) ? '—' : v.toLocaleString('tr-TR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtS = (v,d=1) => (v==null || !isFinite(v)) ? '—' : (Math.abs(v) < 0.05 ? '±' : v > 0 ? '+' : '−') + fmt(Math.abs(v),d);
+const noise = () => (Math.random()+Math.random()+Math.random()-1.5)*1.15;
+const mmss = m => { const s = Math.max(0, Math.round(m*60)); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; };
+const hhmm = h => { const m = Math.max(0, Math.round(h*60)); return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; };
+const dur = h => { const m = Math.max(0, Math.round(h*60)), d = Math.floor(m/1440), hh = Math.floor(m%1440/60), mm = m%60; return d ? `${d} gün ${hh} sa ${mm} dk` : `${hh} sa ${mm} dk`; };
+
+/* ---------- plant and recipe ---------- */
+// Bunker fan — the user has not confirmed this model yet (values from the concept panel): doğrulanacak.
+const BFAN = { q100: 2000, kw100: 7.5, pa100: 6000 };
+const DUCT_D = 0.40;                 // assumed supply duct Ø400 mm (doğrulanacak)
+// PLC rules agreed with MAKOM: 5 min on / 25 min off at 100 %, automatic extension to 6–7 min,
+// 7 min continuous running is a hard limit independent of the operator screen.
+const BASE_RUN = 5, BASE_STOP = 25, HARD_MAX = 7, RATIO_TARGET = 0.9;
+const NPROBE = 8;
+const STG = [
+  {name:'DOLUM',          short:'DOLUM',  span:'0–1. gün', mode:'cont', lines:['Fan sürekli %100','Manuel bitiş'], nom:24},
+  {name:'FERMENTASYON 1', short:'FERM. 1', span:'1–3. gün', mode:'pulse', dur:[48,72], sp:72, up:78, lo:60, lines:['48–72 saat','Otomatik ON/OFF'], nom:60},
+  {name:'FERMENTASYON 2', short:'FERM. 2', span:'3–6. gün', mode:'pulse', dur:[48,72], sp:76, up:80, lo:65, lines:['48–72 saat','Otomatik ON/OFF'], nom:60},
+  {name:'FERMENTASYON 3', short:'FERM. 3', span:'6–9. gün', mode:'pulse', dur:[60,84], sp:74, up:80, lo:65, lines:['60–84 saat','Otomatik ON/OFF'], nom:72},
+  {name:'BOŞALTMA',       short:'BOŞALTMA', span:'9. gün',  mode:'stop', lines:['Fan tamamen durur','Manuel bitiş']},
+];
+const OFFS = [-1.6,-0.7,0.3,0.9,1.3,0.6,-0.3,-1.1];   // probe positions along 18 m: cooler near fan and door
+
+const SCEN = [
+  {k:'fan',     sev:'crit', name:'Fan arızası',          desc:'İnvertör trip, fan çalışmaz'},
+  {k:'power',   sev:'crit', name:'Elektrik kesintisi',   desc:'Fan enerjisiz, PLC UPS’te'},
+  {k:'heat',    sev:'warn', name:'Aşırı ısınma',         desc:'Kompost hızlı ısınır · 6–7 dk ile toparlanır'},
+  {k:'runaway', sev:'crit', name:'Kontrolsüz ısınma',    desc:'7 dk yetmez · yönetici müdahalesi'},
+  {k:'clog',    sev:'warn', name:'Spigot / hat tıkanması', desc:'Basınç yükselir, debi düşer, O₂ azalır'},
+  {k:'probe',   sev:'warn', name:'T_COMP_5 prob arızası', desc:'Prob 15 °C düşük okur'},
+];
+
+/* ---------- per-bunker simulation ---------- */
+function newBunker(i){
+  return { i, stage:0, t:0, stageStart:0, T:45, off:OFFS.slice(), probes:Array(NPROBE).fill(45), valid:Array(NPROBE).fill(true),
+    hist:[], rates:Array(NPROBE).fill(0), rateAvg:0, mAvg:45, min:45, max:45, dT:0, o2:19, o2min:19,
+    fanOn:false, phaseLeft:0, runDur:BASE_RUN, runPlanned:BASE_RUN, onElapsed:0, at7:0, cycles:[], why:'—', running:false,
+    mode:'auto', manualOn:false, plcTrip:-1, energy:0, base:BASE_RUN, stop:BASE_STOP, tgt:{}, sc:{}, alarms:[], since:{}, tOut:14,
+    inputs:{} };
+}
+const B = [newBunker(0), newBunker(1), newBunker(2)];
+let sel = 0, speed = 60, hide = false;
+
+function targets(b){ const S = STG[b.stage], o = b.tgt[b.stage] || {}; return { sp:o.sp ?? S.sp, up:o.up ?? S.up, lo:o.lo ?? S.lo }; }
+function startT(b, i){ const v = parseFloat(((b.inputs['a-isi'])||'').replace(',','.')); return i===0 ? (v > 5 && v < 90 ? v : 45) : [45,62,72,76,70][i]; }
+
+function jump(b, i, warmH){
+  const keep = {sc:b.sc, base:b.base, stop:b.stop, tgt:b.tgt, mode:b.mode, inputs:b.inputs};
+  Object.assign(b, newBunker(b.i), keep);
+  for (let j=0;j<i;j++) b.t += STG[j].nom || 0;
+  b.stage = i; b.stageStart = b.t; b.T = startT(b, i);
+  b.probes = b.off.map(o => b.T + o);
+  b.energy = 0; for (let j=0;j<i;j++) b.energy += (STG[j].mode==='cont' ? 1 : (b.base/(b.base+b.stop))) * (STG[j].nom||0) * BFAN.kw100;
+  b.phaseLeft = b.stop * Math.random();
+  if (warmH) for (let k=0;k<warmH*120;k++) stepB(b, 0.5);
+}
+
+function measure(b){
+  const p = b.probes.slice().sort((a,c)=>a-c), med = (p[3]+p[4])/2;
+  b.valid = b.probes.map(v => Math.abs(v-med) <= 6);
+  const vv = b.probes.filter((v,i)=>b.valid[i]);
+  b.mAvg = vv.reduce((a,c)=>a+c,0)/vv.length; b.min = Math.min(...vv); b.max = Math.max(...vv); b.dT = b.max - b.min;
+}
+function sampleRates(b){
+  // °C/h per probe from the reading one hour ago (sampled every 5 min), the leading indicator the user asked for
+  b.hist.push({t:b.t, p:b.probes.slice()});
+  while (b.hist.length > 13) b.hist.shift();
+  const old = b.hist[0], span = b.t - old.t;
+  b.rates = span > 0.2 ? b.probes.map((v,i) => (v - old.p[i]) / span) : Array(NPROBE).fill(0);
+  const vr = b.rates.filter((r,i)=>b.valid[i]);
+  b.rateAvg = vr.reduce((a,c)=>a+c,0)/vr.length;
+}
+
+// Decision taken at the start of every ON period (automatic mode).
+function decide(b){
+  const g = targets(b), T = b.mAvg, r = b.rateAvg;
+  let run = b.runDur, why;
+  if (T > g.up)                         { run++; why = `Üst limit aşıldı (${fmt(T)} °C)`; }
+  else if (T > g.sp + 2 && r > 0)       { run++; why = `Sıcaklık yükseliyor (${fmtS(r)} °C/sa)`; }
+  else if (b.o2min < 8)                 { run++; why = `O₂ düşük (%${fmt(b.o2min)})`; }
+  else if (T <= g.sp + 1.5 && r <= 0.2) { run = b.base; why = 'Normal · temel çevrim'; }
+  else                                  { why = 'Süre korunuyor'; }
+  run = plcLimit(Math.max(run, b.base));
+  b.at7 = run >= HARD_MAX ? b.at7 + 1 : 0;
+  b.runDur = run; b.why = why;
+}
+// Hard limit kept apart from the control algorithm, as it will be in the PLC.
+function plcLimit(min){ return Math.min(min, HARD_MAX); }
+
+function stepB(b, dtm){
+  const dth = dtm/60, S = STG[b.stage];
+  b.t += dth;
+  const hod = (b.t + 9) % 24; b.tOut = 14 + 3*Math.sin(2*Math.PI*(hod-9)/24);
+  // fan command
+  let cmd;
+  if (S.mode === 'cont') cmd = true;
+  else if (S.mode === 'stop') cmd = false;
+  else if (b.mode === 'manual') cmd = b.manualOn;
+  else {
+    b.phaseLeft -= dtm;
+    if (b.phaseLeft <= 0){
+      if (b.fanOn){ b.cycles.push(b.runDur); if (b.cycles.length > 96) b.cycles.shift(); b.fanOn = false; b.phaseLeft += b.stop; b.o2min = 99; }
+      else { decide(b); b.fanOn = true; b.phaseLeft += b.runDur; }
+    }
+    cmd = b.fanOn;
+  }
+  // PLC protection: outside filling, the fan never runs longer than 7 minutes without a pause
+  if (cmd && S.mode !== 'cont'){
+    if (b.onElapsed >= HARD_MAX){ cmd = false; if (b.mode === 'manual' && b.manualOn){ b.manualOn = false; b.plcTrip = b.t; } }
+  }
+  const fail = !!(b.sc.fan || b.sc.power);
+  b.running = cmd && !fail;
+  b.onElapsed = cmd ? b.onElapsed + dtm : 0;
+  // compost: biological heat always, air cools while the fan runs
+  const flowF = b.sc.clog ? .45 : 1, Ta = b.tOut;
+  if (S.mode === 'cont') b.T += (b.running ? (56 - b.T)*0.12 : 1.5) * dth;
+  else if (S.mode === 'stop') b.T += (Ta - b.T)*0.03*dth;
+  else {
+    // Biological drive chosen so a 5/25 cycle holds the stage target; each extra minute of air
+    // lowers the balance by about 4 °C. Low oxygen slows the microbes down.
+    const Tm = S.sp + 1.25*(S.sp - 14) + (b.sc.heat ? 15 : 0) + (b.sc.runaway ? 60 : 0);
+    const o2f = b.o2 < 6 ? clamp(b.o2/6, 0.35, 1) : 1;
+    b.T += (0.08*(Tm - b.T)*o2f - (b.running ? 0.6*flowF*(b.T - Ta) : 0)) * dth;
+  }
+  b.T += noise()*0.03*Math.sqrt(dth);
+  // oxygen: recovers quickly while air flows, consumed while paused
+  const bio = S.mode === 'pulse' ? 1 : S.mode === 'cont' ? .6 : .1;
+  if (b.running) b.o2 += (20 - b.o2)*Math.min(1, dth*12*flowF);
+  else b.o2 += (S.mode === 'stop' ? (19 - b.o2)*Math.min(1, dth*.5) : (2 - b.o2)*Math.min(1, dth*1.5*bio));
+  if (!b.running) b.o2min = Math.min(b.o2min, b.o2);
+  b.off = b.off.map((o,i) => o + (OFFS[i]-o)*Math.min(1, dth*2) + noise()*0.06*Math.sqrt(dth));
+  b.probes = b.off.map(o => b.T + o);
+  if (b.sc.probe) b.probes[4] = b.T - 15 + b.off[4]*0.3;
+  measure(b);
+  if (Math.floor(b.t*12) !== Math.floor((b.t - dth)*12)) sampleRates(b);
+  b.energy += (b.running ? BFAN.kw100 : 0) * dth;
+  // stage transitions (time + temperature), filling and emptying end by hand
+  const ts = b.t - b.stageStart;
+  if (S.mode === 'pulse' && ((ts >= S.dur[0] && b.mAvg >= targets(b).sp - 2) || ts >= S.dur[1])){
+    b.stage++; b.stageStart = b.t; b.fanOn = false; b.phaseLeft = 0; b.at7 = 0;
+  }
+  collectAlarms(b);
+}
+
+function collectAlarms(b){
+  const S = STG[b.stage], g = targets(b), A = [], ts = b.t - b.stageStart;
+  const add = (k, sev, msg, resp) => A.push({k, sev, msg, resp});
+  if (b.sc.power) add('power','crit','ŞEBEKE KESİNTİSİ: fan enerjisiz','PLC ve sensörler UPS ile çalışıyor · çevrim enerji gelince kaldığı yerden devam eder');
+  else if (b.sc.fan && S.mode !== 'stop') add('fan','crit','FAN ARIZASI: invertör trip, fan çalışmıyor','Bakım ekibine bildirim · O₂ ve sıcaklık izleniyor');
+  if (b.sc.clog && b.running) add('clog','warn',`P_BUNKER yüksek (${fmt(BFAN.pa100*1.35,0)} Pa), debi %55 düşük`,'Çalışma süresi O₂ için uzatılıyor · spigot hatları kontrol edilmeli');
+  b.valid.forEach((v,i) => { if (!v) add('probe'+i,'warn',`T_COMP_${i+1} sapmalı (${fmt(b.probes[i])} °C)`,'Ortalamadan ve değişim hızından hariç tutuldu'); });
+  if (S.mode === 'pulse'){
+    if (!b.sc.fan && !b.sc.power && b.mode === 'auto' && b.at7 >= 3 && b.rateAvg > -0.3 && b.mAvg > g.sp + 2)
+      add('mgr','crit',`7 dk sınırında sıcaklık düşmüyor (${fmt(b.mAvg)} °C, ${fmtS(b.rateAvg)} °C/sa)`,'Otomasyon daha uzun çalıştırmaz (10/15/20 dk yok) · YÖNETİCİ MÜDAHALESİ GEREKLİ');
+    if (b.mAvg > g.up + 5) add('hot','crit',`Kompost çok sıcak (${fmt(b.mAvg)} °C, üst limit ${fmt(g.up)})`,'Fan 7 dk sınırında · operatör kontrolü gerekli');
+    else if (b.mAvg > g.up) add('hot','warn',`Üst limit aşıldı (${fmt(b.mAvg)} °C > ${fmt(g.up)} °C)`,'Çalışma süresi 6–7 dk’ya uzatıldı');
+    if (ts > 6 && b.mAvg < g.lo) add('cold','warn',`Alt limitin altında (${fmt(b.mAvg)} °C < ${fmt(g.lo)} °C)`,'Temel çevrim korunuyor · kompost reçetesi kontrol edilmeli');
+    if (b.o2 < 5) add('o2','crit',`O₂ kritik (%${fmt(b.o2)})`, b.running ? 'Fan çalışıyor' : 'Sonraki çevrimde süre uzatılacak');
+    else if (b.o2min < 8 && b.o2min < 99) add('o2','warn',`O₂ düşük (en düşük %${fmt(b.o2min)})`,'Çalışma süresi 6–7 dk’ya uzatılıyor');
+    if (ts > S.dur[1] - 0.01) add('time','warn','Etap süresi doldu','Sonraki etaba geçiliyor');
+  }
+  if (b.mode === 'manual' && S.mode === 'pulse') add('man','info','Manuel mod: fan operatörde','PLC 7 dk sınırı manuelde de geçerli');
+  if (b.plcTrip >= 0 && b.t - b.plcTrip < 0.25) add('trip','info','PLC koruması: fan 7 dk’da durduruldu','Operatör komutundan bağımsız donanım sınırı');
+  const since = {}; A.forEach(a => since[a.k] = b.since[a.k] ?? b.t);
+  b.since = since; b.alarms = A;
+}
+
+/* ---------- mimic ---------- */
+let seed = 11; const rnd = () => (seed = (seed*16807) % 2147483647) / 2147483647;
+function sbox(x,y,w,h,label,id,o={}){
+  const lh = o.dark ? 22 : Math.round(h*0.44);
+  return `<g class="sbox${o.dark?' dark':''}" id="g-${id}"><rect class="sb-bg" x="${x}" y="${y}" width="${w}" height="${h}" rx="5"/>
+    <path class="sb-hd" d="M${x+5},${y+.75}h${w-10}a4.25,4.25 0 0 1 4.25,4.25v${lh-5}h-${w-1.5}v-${lh-5}a4.25,4.25 0 0 1 4.25,-4.25z"/>
+    <text class="sb-lb" x="${x+w/2}" y="${y+lh/2+1}" dominant-baseline="middle">${label}</text>
+    <text class="sb-v${o.big?' big':''}" id="${id}" x="${x+w/2}" y="${y+lh+(h-lh)/2+2}" dominant-baseline="middle"></text></g>`;
+}
+const ARW = 'M-16,-4H2V-10L16,0L2,10V4H-16Z';
+function arrow(x,y,dir,k){ const r = {r:0,u:-90}[dir]; return `<path class="flow" d="${ARW}" transform="translate(${x} ${y}) rotate(${r})" style="animation-delay:${(k%6)*0.2}s"/>`; }
+const PX = i => 390 + i*155;
+function buildMimic(){
+  let dots = ''; const cols = ['#8b5732','#4d2a13','#a3703f','#5f3418','#7a4825'];
+  for (let i=0;i<22;i++) dots += `<ellipse cx="${(rnd()*44).toFixed(1)}" cy="${(rnd()*30).toFixed(1)}" rx="${(2+rnd()*4).toFixed(1)}" ry="${(1.5+rnd()*2.5).toFixed(1)}" fill="${cols[i%5]}"/>`;
+  $('compostDots').innerHTML = dots;
+  let pile = 'M300,372L300,214';
+  for (let x=312;x<=1572;x+=14) pile += `L${x},${(170 + Math.sin(x/53)*6 + (rnd()-.5)*10 + (x < 360 ? (360-x)*0.7 : 0) + (x > 1520 ? (x-1520)*0.7 : 0)).toFixed(1)}`;
+  pile += 'L1584,372Z';
+  let g = '';
+  // bunker walls (side section) and floor
+  g += `<rect x="280" y="126" width="1324" height="250" fill="url(#gWall)" stroke="#a9a49d"/>
+        <rect x="280" y="126" width="18" height="290" fill="url(#gConc)"/><rect x="1586" y="126" width="18" height="290" fill="url(#gConc)"/>
+        <path d="${pile}" fill="url(#pCompost)" stroke="#4d2a13"/>
+        <rect x="270" y="410" width="1344" height="26" fill="url(#gConc)" stroke="#8d8880"/>
+        <rect x="298" y="374" width="1288" height="16" rx="8" fill="url(#gPipe)" stroke="#7d8893"/>
+        <rect x="298" y="392" width="1288" height="16" rx="8" fill="url(#gPipe)" stroke="#7d8893"/>`;
+  for (let x=330, k=0; x<=1560; x+=70, k++) g += `<g class="spig-g" style="animation-delay:${(k%5)*.22}s"><line class="spig" x1="${x}" y1="372" x2="${x}" y2="336"/><path class="spig-h" d="M${x-7},338L${x},322L${x+7},338Z"/></g>`;
+  // fan house with fresh air inlet
+  g += `<rect x="60" y="250" width="220" height="166" fill="url(#gConc)" stroke="#8d8880"/>
+        <rect x="74" y="300" width="160" height="112" fill="#cfd6de" stroke="#8d8880"/>
+        <rect x="0" y="352" width="150" height="40" fill="url(#gH)" stroke="#5f9fd8"/>
+        <rect x="186" y="352" width="116" height="40" fill="url(#gH)" stroke="#5f9fd8"/>
+        <rect x="108" y="400" width="84" height="14" rx="2" fill="#3b4552"/>
+        <circle cx="150" cy="372" r="38" fill="url(#gFan)" stroke="#0e2f86" stroke-width="2"/>
+        <circle cx="150" cy="372" r="25" fill="#173a94"/>
+        <g id="rotor">${[0,45,90,135,180,225,270,315].map(a => `<path d="M150,372 L150,349 Q156,355 155,370Z" fill="#7fb0ff" transform="rotate(${a} 150 372)"/>`).join('')}</g>
+        <circle cx="150" cy="372" r="7" fill="#d4dde8"/>`;
+  g += arrow(40,372,'r',0) + arrow(232,372,'r',1) + arrow(274,372,'r',2);
+  // P_BUNKER on the header pipe, O2 into the pile
+  g += `<line class="probe" x1="318" y1="300" x2="318" y2="372"/><rect class="probe-tip" x="312" y="364" width="12" height="12" rx="3"/>`;
+  g += `<line class="probe" x1="560" y1="300" x2="560" y2="342"/><rect class="probe-tip" x="556" y="336" width="8" height="14" rx="3"/>`;
+  for (let i=0;i<NPROBE;i++) g += `<line class="probe" x1="${PX(i)}" y1="80" x2="${PX(i)}" y2="232"/><rect class="probe-tip" x="${PX(i)-4}" y="226" width="8" height="14" rx="3"/>`;
+  // labels
+  g += `<rect x="6" y="300" width="130" height="40" rx="4" fill="#fff" stroke="var(--line)"/><text class="tag-lbl" x="71" y="316" text-anchor="middle" style="font-size:15px">TAZE HAVA</text><text class="tag-lbl" x="71" y="333" text-anchor="middle" style="font-size:15px">GİRİŞİ</text>
+        <rect x="120" y="258" width="60" height="26" rx="4" fill="#fff" stroke="var(--line)"/><text class="tag-lbl" x="150" y="277" text-anchor="middle" style="font-size:16px">FAN</text>
+        <rect x="770" y="440" width="380" height="26" rx="4" fill="#fff" stroke="#2b3442" stroke-width="1.2"/><text class="tag-lbl" x="960" y="459" text-anchor="middle" style="font-size:16px">PVC BORULU SPİGOT TABAN · 18,00 × 7,20 m</text>
+        <text class="tag-lbl" x="20" y="44" style="font-size:30px" id="mBunkerLbl">BUNKER 1</text>
+        <text class="tag-lbl" x="20" y="70" style="font-size:17px;fill:var(--ink-2)" id="mStageLbl">—</text>
+        <text x="20" y="92" style="font-size:13px;fill:var(--muted)">18,00 × 7,20 m iç ölçü</text>`;
+  g += sbox(250,246,150,54,'BASINÇ · P_BUNKER','v-p',{dark:true,big:true});
+  g += sbox(498,246,124,54,'O₂_BUNKER','v-o2');
+  for (let i=0;i<NPROBE;i++) g += sbox(PX(i)-54,24,108,56,`T_COMP_${i+1}`,`v-t${i}`);
+  $('gen').innerHTML = g;
+}
+const MS = [['FAN','v-fan-ms'],['P_BUNKER','v-p'],['O₂_BUNKER','v-o2']].concat(Array.from({length:NPROBE},(_,i)=>[`T_COMP_${i+1}`,`v-t${i}`]));
+
+/* ---------- render ---------- */
+function setV(id, v, unit, d=1){ const el = $(id); if (!el) return; el.innerHTML = `<tspan>${hide ? '—' : (typeof v === 'string' ? v : fmt(v,d))}</tspan><tspan class="u"> ${unit}</tspan>`; }
+function setT(id, t){ $(id).textContent = t; }
+function tons(b){ const v = parseFloat(((b.inputs['a-ton'])||'').replace(',','.')); return v > 0 && v < 2000 ? {t:v, def:false} : {t:250, def:true}; }
+const mq = window.matchMedia('(max-width: 900px)');
+
+function renderOverview(){
+  $('overview').innerHTML = B.map(b => {
+    const S = STG[b.stage], crit = b.alarms.some(a => a.sev === 'crit'), n = b.alarms.filter(a => a.sev !== 'info').length;
+    const fan = b.running ? (S.mode === 'cont' ? 'Fan sürekli %100' : `Fan çalışıyor · ${mmss(b.phaseLeft)}`) : S.mode === 'stop' ? 'Fan durdu' : (b.sc.fan || b.sc.power) ? 'Fan arızalı' : `Bekliyor · ${mmss(b.phaseLeft)}`;
+    return `<button type="button" class="ovb" data-i="${b.i}" aria-pressed="${b.i === sel}">
+      <span class="bn">B${b.i+1}</span><span class="st">${S.short}</span><span class="tp num">${hide ? '—' : fmt(b.mAvg)} °C</span>
+      <span class="fn"><i class="dot ${(b.sc.fan||b.sc.power) && S.mode!=='stop' ? 'bad' : b.running ? 'on' : ''}"></i>${hide ? '—' : fan}</span>
+      <span class="al" style="color:${crit ? 'var(--crit)' : n ? 'var(--warn)' : 'var(--ok)'}">${hide ? '' : n ? `${n} alarm` : 'Normal'}</span></button>`;
+  }).join('');
+}
+
+function render(){
+  const b = B[sel], S = STG[b.stage], g = targets(b), H = hide, ts = b.t - b.stageStart;
+  const qf = b.sc.clog ? .45 : 1, Q = b.running ? BFAN.q100*qf : 0;
+  // mimic
+  setV('v-p', b.running ? BFAN.pa100*(b.sc.clog ? 1.35 : 1) : 0, 'Pa', 0);
+  setV('v-o2', b.o2, '% O₂');
+  b.probes.forEach((p,i) => { setV('v-t'+i, p, '°C'); $('g-v-t'+i).classList.toggle('dev', !H && !b.valid[i]); });
+  $('g-v-p').classList.toggle('alarm', !H && !!b.sc.clog && b.running);
+  $('g-v-o2').classList.toggle('alarm', !H && S.mode === 'pulse' && b.o2 < 8);
+  $('mimic').classList.toggle('running', !H && b.running);
+  setT('mBunkerLbl', `BUNKER ${b.i+1}`); setT('mStageLbl', S.name);
+  // KPIs
+  const T = tons(b), cycleAvgKw = S.mode === 'cont' ? BFAN.kw100 : S.mode === 'stop' ? 0 : BFAN.kw100*b.runDur/(b.runDur+b.stop);
+  setT('k-q', H ? '—' : fmt(Q,0)); setT('k-q-sub', `%100 = ${fmt(BFAN.q100,0)} m³/h · ${fmt(BFAN.q100/T.t,1)} m³/h·t`);
+  setT('k-v', H ? '—' : fmt(Q/3600/(Math.PI*(DUCT_D/2)**2),1)); setT('k-v-sub', `Ø${DUCT_D*1000} kanal varsayımı · doğrulanacak`);
+  setT('k-f', H ? '—' : b.running ? '100' : '0'); setT('k-f-sub', S.mode === 'pulse' ? `Çevrim ortalaması %${fmt(100*b.runDur/(b.runDur+b.stop),0)}` : S.mode === 'cont' ? 'Dolum: sürekli' : 'Boşaltma: kapalı');
+  setT('k-p', H ? '—' : fmt(b.running ? BFAN.kw100 : 0,1)); setT('k-p-sub', `Çevrim ort. ${fmt(cycleAvgKw,2)} kW · inverter verisi, model doğrulanacak`);
+  setT('k-e', H ? '—' : fmt(b.energy,0)); setT('k-e-sub', `Bu parti · ${H ? '—' : fmt(b.energy/T.t,2)} kWh/t · ${fmt(T.t,0)} t${T.def ? ' (varsayılan)' : ''}`);
+  const man = b.mode === 'manual' && S.mode === 'pulse';
+  $('k-mode-card').classList.toggle('man', man);
+  setT('k-mode', S.mode === 'cont' ? 'DOLUM' : S.mode === 'stop' ? 'BOŞALTMA' : man ? 'MANUEL' : 'OTOMATİK');
+  setT('k-mode-sub', S.mode === 'cont' ? 'Fan sürekli %100' : S.mode === 'stop' ? 'Fan boşaltma bitene kadar kapalı' : man ? 'Fan operatörde · 7 dk PLC sınırı' : `${b.base}–${HARD_MAX} dk çalışma / ${b.stop} dk durma`);
+  // settings
+  setT('setFor', `B${b.i+1} · ${S.name}`);
+  const fields = {'s-run':b.base,'s-stop':b.stop,'s-sp':g.sp,'s-up':g.up,'s-lo':g.lo};
+  Object.entries(fields).forEach(([id,v]) => { const el = $(id); if (document.activeElement !== el) el.value = v == null ? '—' : String(v).replace('.',','); });
+  ['s-sp','s-up','s-lo'].forEach(id => $(id).closest('.ipv').classList.toggle('locked', !unlocked || S.mode !== 'pulse'));
+  ['s-sp','s-up','s-lo'].forEach(id => $(id).disabled = !unlocked || S.mode !== 'pulse');
+  if (document.activeElement !== $('s-mode')) $('s-mode').value = b.mode;
+  $('s-mode').disabled = S.mode !== 'pulse';
+  setT('s-mode-note', S.mode === 'pulse' ? 'Otomatik veya manuel' : `${S.name}: etap belirler`);
+  setT('s-run-note', runNote || `Otomatik aralık ${b.base}–${HARD_MAX} dk`);
+  // fan cycle
+  const cs = $('cState');
+  const fail = !!(b.sc.fan || b.sc.power);
+  if (H){ cs.textContent = '—'; cs.className = 'off'; setT('cLeft',''); }
+  else if (S.mode === 'cont'){ cs.textContent = fail ? 'FAN ARIZALI' : 'SÜREKLİ ÇALIŞMA'; cs.className = fail ? 'bad' : 'on'; setT('cLeft','Dolum boyunca %100 · 7 dk sınırı dolumda uygulanmaz'); }
+  else if (S.mode === 'stop'){ cs.textContent = 'FAN DURDU'; cs.className = 'off'; setT('cLeft','Boşaltma tamamlanana kadar fan yeniden çalışmaz'); }
+  else if (man){ cs.textContent = b.running ? 'MANUEL · ÇALIŞIYOR' : 'MANUEL · DURUYOR'; cs.className = b.running ? 'on' : 'off'; setT('cLeft', b.running ? `PLC kesmesine ${mmss(HARD_MAX - b.onElapsed)}` : ''); }
+  else if (fail){ cs.textContent = 'FAN ARIZALI'; cs.className = 'bad'; setT('cLeft', b.fanOn ? 'Çalışma zamanı ama fan dönmüyor' : `Sonraki çalışma ${mmss(b.phaseLeft)}`); }
+  else { cs.textContent = b.fanOn ? 'ÇALIŞIYOR · %100' : 'BEKLEMEDE'; cs.className = b.fanOn ? 'on' : 'off'; setT('cLeft', b.fanOn ? `${mmss(b.phaseLeft)} kaldı · ${b.runDur} dk çalışma` : `Sonraki çalışma ${mmss(b.phaseLeft)} sonra`); }
+  const total = b.runDur + b.stop, pulse = S.mode === 'pulse' && !man;
+  $('cOn').style.width = (pulse ? b.base/total*100 : S.mode === 'cont' ? 100 : 0) + '%';
+  $('cExt').style.left = (b.base/total*100) + '%'; $('cExt').style.width = (pulse ? (b.runDur - b.base)/total*100 : 0) + '%';
+  $('cCap').style.left = (HARD_MAX/total*100) + '%'; $('cCap').hidden = !pulse;
+  const elapsed = b.fanOn ? b.runDur - b.phaseLeft : b.runDur + (b.stop - b.phaseLeft);
+  $('cMk').style.left = clamp(elapsed/total*100, 0, 100) + '%'; $('cMk').hidden = !pulse || H;
+  setT('cMid', pulse ? `${b.runDur} dk çalışma` : ''); setT('cEnd', pulse ? `${total} dk` : '');
+  setT('cWhy', H ? '—' : S.mode === 'pulse' ? (man ? 'Manuel' : b.why) : S.mode === 'cont' ? 'Dolum modu' : 'Boşaltma modu');
+  setT('cRun', S.mode === 'pulse' ? `${b.runDur} dk / ${b.stop} dk` : '—'); setT('c7', String(b.at7));
+  $('manCtl').hidden = !man;
+  $('manOn').disabled = b.manualOn || b.onElapsed > 0;
+  // ratio of base-length cycles
+  const last = b.cycles.slice(-48), pct = last.length ? last.filter(c => c === b.base).length/last.length : null;
+  setT('rPct', H || pct == null ? '—' : `%${fmt(pct*100,0)}`); $('rPct').classList.toggle('low', !H && pct != null && pct < RATIO_TARGET);
+  $('rBar').style.width = (pct ?? 0)*100 + '%';
+  setT('rTxt', pct == null ? 'Henüz tamamlanmış çevrim yok' : `${last.length} çevrimin ${last.filter(c=>c===b.base).length}’i ${b.base} dk · hedef ≈ %90, kota değil`);
+  const h24 = b.cycles.slice(-24);
+  $('hist').innerHTML = Array.from({length:24}, (_,k) => { const c = h24[k - (24 - h24.length)]; return c == null ? '<i class="r0" style="height:12%"></i>' : `<i class="${c >= 7 ? 'r7' : c >= 6 ? 'r6' : ''}" style="height:${(c/7*100).toFixed(0)}%" title="${c} dk"></i>`; }).join('');
+  // rates
+  $('rgrid').innerHTML = b.probes.map((p,i) => { const r = b.rates[i], c = Math.abs(r) < 0.1 ? 'fl' : r > 0 ? 'up' : 'dn';
+    return `<div class="rc${!H && !b.valid[i] ? ' dev' : ''}"><span>T_COMP_${i+1}</span><b class="num">${H ? '—' : fmt(p)} °C</b><em class="${c} num">${c === 'up' ? '▲' : c === 'dn' ? '▼' : '■'} ${H ? '—' : fmtS(r)} °C/sa</em></div>`; }).join('');
+  setT('rs-avg', H ? '—' : fmt(b.mAvg)); setT('rs-rate', H ? '—' : fmtS(b.rateAvg)); setT('rs-min', H ? '—' : fmt(b.min)); setT('rs-max', H ? '—' : fmt(b.max)); setT('rs-dt', H ? '—' : fmt(b.dT)); setT('rs-o2', H ? '—' : fmt(b.o2));
+  // stages
+  STG.forEach((st,i) => { const el = $('stg-'+i); el.classList.toggle('active', i === b.stage); el.classList.toggle('done', i < b.stage); setT('rs-'+i, i === b.stage ? `▶ ${dur(ts)}` : i < b.stage ? '✓' : ''); });
+  setT('actName', `${b.stage+1}. ${S.name}`); setT('actSpan', `${S.span} · ${S.lines.join(' · ')}`);
+  const ab = $('actBtn');
+  ab.hidden = !(S.mode === 'cont' || S.mode === 'stop');
+  ab.textContent = S.mode === 'cont' ? 'Dolumu bitir → Fermentasyon 1' : 'Boşaltma tamamlandı → yeni parti';
+  setT('elT', hhmm(ts));
+  setT('elGoal', S.dur ? `Hedef süre: ${S.dur[0]}–${S.dur[1]} saat` : 'Hedef süre: manuel bitiş');
+  $('elBar').style.width = (S.dur ? clamp(ts/S.dur[1]*100, 0, 100) : 0) + '%';
+  setT('elTotal', `Dolumdan beri ${dur(b.t)}`);
+  // status chip
+  const sc = $('statusChip'), crit = b.alarms.some(a => a.sev === 'crit');
+  sc.className = 'chip status' + (H ? ' idle' : (fail && S.mode !== 'stop') ? ' fault' : S.mode === 'cont' ? ' fill' : (!b.running) ? ' stopped' : '');
+  setT('statusText', H ? 'BAĞLANTI BEKLENİYOR' : b.sc.power ? 'ŞEBEKE YOK • UPS DEVREDE' : (fail && S.mode !== 'stop') ? 'ARIZA • FAN ÇALIŞMIYOR'
+    : S.mode === 'cont' ? 'DOLUM • FAN SÜREKLİ %100' : S.mode === 'stop' ? 'BOŞALTMA • FAN DURDU' : man ? `MANUEL • FAN ${b.running ? 'ÇALIŞIYOR' : 'DURUYOR'}`
+    : b.running ? `OTOMATİK • FAN ÇALIŞIYOR (${b.runDur} DK)` : 'OTOMATİK • FAN BEKLEMEDE');
+  $('demoTag').hidden = H;
+  // alarms (selected bunker) + header count over all bunkers
+  const L = H ? [] : b.alarms, nA = H ? 0 : B.reduce((n,x) => n + x.alarms.filter(a => a.sev !== 'info').length, 0), anyCrit = !H && B.some(x => x.alarms.some(a => a.sev === 'crit'));
+  setT('alarmCount', String(nA)); $('alarmChip').classList.toggle('on', anyCrit); $('alarmChip').classList.toggle('warnon', !anyCrit && nA > 0);
+  setT('alN', String(L.filter(a => a.sev !== 'info').length)); setT('scFor', `B${b.i+1}`);
+  $('alList').innerHTML = L.length ? L.map(a => `<li class="${a.sev}"><i class="sev ${a.sev}">${{crit:'KRİTİK',warn:'UYARI',info:'BİLGİ'}[a.sev]}</i><b>${a.msg}</b><small class="num">t+${dur(b.since[a.k])}</small><span>Otomatik tepki: ${a.resp}</span></li>`).join('')
+    : `<li class="none">${H ? 'Bağlantı yok, alarm okunamıyor.' : 'Aktif alarm yok. Bunker normal çalışıyor.'}</li>`;
+  $('scList').querySelectorAll('.sc').forEach(el => el.setAttribute('aria-pressed', String(!!b.sc[el.dataset.k])));
+  $('bsel').querySelectorAll('button').forEach(el => el.setAttribute('aria-pressed', String(+el.dataset.i === sel)));
+  renderOverview();
+  // phone grid
+  if (mq.matches){
+    MS.forEach(([, id]) => { const el = $('ms-'+id); if (!el) return;
+      el.lastElementChild.textContent = id === 'v-fan-ms' ? (H ? '—' : b.running ? 'ÇALIŞIYOR %100' : 'DURUYOR') : $(id).textContent;
+      const gg = $('g-'+id); ['alarm','dev'].forEach(c => el.classList.toggle(c, !!gg && gg.classList.contains(c))); });
+  }
+  updateSound();
+}
+
+/* ---------- inputs per bunker (kept in this browser) ---------- */
+const AIN = ['a-nem','a-n','a-ph','a-isi','a-ton'];
+const KEY = 'makom-bunker-inputs';
+function loadInputs(){ try { const s = JSON.parse(localStorage.getItem(KEY) || '{}'); B.forEach(b => b.inputs = s[b.i] || {}); } catch(e){} }
+function saveInputs(){ try { const s = {}; B.forEach(b => s[b.i] = b.inputs); localStorage.setItem(KEY, JSON.stringify(s)); } catch(e){} }
+function showInputs(){ const b = B[sel]; AIN.forEach(id => $(id).value = b.inputs[id] || ''); setT('anaB', `B${b.i+1}`); }
+AIN.forEach(id => $(id).addEventListener('input', e => { B[sel].inputs[id] = e.target.value; saveInputs(); }));
+
+/* ---------- manager lock and settings ---------- */
+let unlocked = false, runNote = '';
+$('lockBtn').addEventListener('click', e => {
+  unlocked = !unlocked;
+  e.currentTarget.setAttribute('aria-pressed', String(unlocked));
+  e.currentTarget.textContent = unlocked ? '🔓 Yönetici kilidi: açık' : '🔒 Yönetici kilidi: kapalı';
+  ['s-run','s-stop'].forEach(id => { $(id).disabled = !unlocked; $(id).closest('.ipv').classList.toggle('locked', !unlocked); });
+  render();
+});
+function num(id){ return parseFloat($(id).value.replace(',','.')); }
+$('s-run').addEventListener('change', () => {
+  const b = B[sel], v = Math.round(num('s-run'));
+  if (!isFinite(v)) return;
+  if (v > HARD_MAX){ runNote = `PLC sınırı: en fazla ${HARD_MAX} dk`; } else runNote = '';
+  b.base = clamp(v, 1, HARD_MAX); b.runDur = Math.max(b.runDur, b.base);
+  setTimeout(() => { runNote = ''; }, 5000); render();
+});
+$('s-stop').addEventListener('change', () => { const v = Math.round(num('s-stop')); if (isFinite(v)) B[sel].stop = clamp(v, 10, 60); render(); });
+['s-sp','s-up','s-lo'].forEach(id => $(id).addEventListener('change', () => {
+  const b = B[sel], v = num(id); if (!isFinite(v)) return;
+  b.tgt[b.stage] = Object.assign({}, b.tgt[b.stage], {[id.slice(2)]: clamp(v, 30, 90)}); render();
+}));
+$('s-mode').addEventListener('change', e => { const b = B[sel]; b.mode = e.target.value; b.manualOn = false; b.fanOn = false; b.phaseLeft = b.stop; render(); });
+$('manOn').addEventListener('click', () => { const b = B[sel]; b.manualOn = true; render(); });
+$('manOff').addEventListener('click', () => { const b = B[sel]; b.manualOn = false; render(); });
+
+/* ---------- stages, bunker select, scenarios ---------- */
+$('stages').innerHTML = STG.map((st,i) => `<button type="button" class="stg" id="stg-${i}" data-i="${i}" title="Bu bunkeri ${st.name} etabından başlat"><span class="no">${i+1}</span><span class="bd"><span class="nm">${st.name}</span><span class="ln">${st.span}</span><span class="ln">${st.lines[0]}</span><span class="rs" id="rs-${i}"></span></span></button>`).join('');
+$('stages').addEventListener('click', e => { const s = e.target.closest('.stg'); if (!s) return; const b = B[sel]; jump(b, +s.dataset.i, 1); note(`B${b.i+1}: ${STG[+s.dataset.i].name} etabından başlatıldı`); render(); });
+$('actBtn').addEventListener('click', () => { const b = B[sel];
+  if (STG[b.stage].mode === 'cont'){ b.stage = 1; b.stageStart = b.t; b.fanOn = false; b.phaseLeft = 0; note(`B${b.i+1}: dolum bitti, Fermentasyon 1 başladı`); }
+  else { jump(b, 0, 0); note(`B${b.i+1}: boşaltma tamamlandı, yeni parti dolumda`); }
+  render(); });
+$('bsel').innerHTML = B.map(b => `<button type="button" data-i="${b.i}" aria-pressed="false" aria-label="Bunker ${b.i+1}">${b.i+1}</button>`).join('');
+function choose(i){ sel = i; showInputs(); render(); }
+$('bsel').addEventListener('click', e => { const x = e.target.closest('button'); if (x) choose(+x.dataset.i); });
+$('overview').addEventListener('click', e => { const x = e.target.closest('.ovb'); if (x) choose(+x.dataset.i); });
+$('scList').innerHTML = SCEN.map(c => `<button type="button" class="sc ${c.sev}" data-k="${c.k}" aria-pressed="false"><b>${c.name}</b><span>${c.desc}</span><i class="sev ${c.sev}">${c.sev==='crit'?'KRİTİK':'UYARI'}</i></button>`).join('');
+$('scList').addEventListener('click', e => { const x = e.target.closest('.sc'); if (!x) return; const b = B[sel]; b.sc[x.dataset.k] = !b.sc[x.dataset.k]; stepB(b, 0.01); render(); });
+$('clearSc').addEventListener('click', () => { B[sel].sc = {}; render(); });
+$('alarmChip').addEventListener('click', () => $('alarmPanel').scrollIntoView({behavior:'smooth', block:'start'}));
+$('speedSeg').addEventListener('click', e => { const x = e.target.closest('button'); if (!x) return; speed = +x.dataset.s; $('speedSeg').querySelectorAll('button').forEach(y => y.setAttribute('aria-pressed', String(y === x))); });
+$('dataBtn').addEventListener('click', e => { hide = !hide; e.currentTarget.setAttribute('aria-pressed', String(hide)); e.currentTarget.textContent = hide ? 'Veriyi göster' : 'Veriyi gizle'; render(); });
+let msgT; function note(t){ setT('demoMsg', t); clearTimeout(msgT); msgT = setTimeout(() => setT('demoMsg',''), 4000); }
+
+/* ---------- fan sound ---------- */
+let audio = null;
+function startSound(){
+  const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+  const ctx = new AC(), buf = ctx.createBuffer(1, ctx.sampleRate*2, ctx.sampleRate), d = buf.getChannelData(0);
+  for (let i=0;i<d.length;i++) d[i] = Math.random()*2 - 1;
+  const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = .8;
+  const nG = ctx.createGain(), tG = ctx.createGain(), master = ctx.createGain();
+  nG.gain.value = 0; tG.gain.value = 0; master.gain.value = .7;
+  const tone = ctx.createOscillator(); tone.type = 'triangle'; tone.frequency.value = 580;   // high-pressure fan ≈ 2900 rpm × 12 blades
+  src.connect(lp).connect(nG).connect(master); tone.connect(tG).connect(master); master.connect(ctx.destination);
+  src.start(); tone.start(); audio = {ctx, lp, nG, tG, on:false}; return true;
+}
+function updateSound(){
+  if (!audio || !audio.on) return;
+  const r = !hide && B[sel].running ? 1 : 0, t = audio.ctx.currentTime;
+  audio.lp.frequency.setTargetAtTime(r ? 2800 : 200, t, .4);
+  audio.nG.gain.setTargetAtTime(r ? .42 : 0, t, .6);
+  audio.tG.gain.setTargetAtTime(r ? .035 : 0, t, .6);
+}
+$('soundBtn').addEventListener('click', e => {
+  if (!audio && !startSound()){ setT('soundLbl','SES DESTEKLENMİYOR'); return; }
+  audio.on = !audio.on; if (audio.on) audio.ctx.resume(); else audio.ctx.suspend();
+  e.currentTarget.setAttribute('aria-pressed', String(audio.on)); setT('soundLbl', audio.on ? 'FAN SESİ AÇIK' : 'FAN SESİ'); updateSound();
+});
+
+/* ---------- boot ---------- */
+function tick(){ const d = new Date(); setT('clock', d.toLocaleTimeString('tr-TR',{hour12:false})); setT('dateLbl', d.toLocaleDateString('tr-TR')); }
+buildMimic();
+$('msens').innerHTML = MS.map(([l,id]) => `<div class="ms" id="ms-${id}"><span>${l}</span><b></b></div>`).join('');
+loadInputs();
+// three bunkers at different points of the batch so the overview shows real variety
+jump(B[0], 2, 26); jump(B[1], 1, 14); jump(B[2], 0, 6);
+showInputs(); render(); tick();
+setInterval(() => {
+  const dtm = 0.25*speed/60, n = Math.max(1, Math.ceil(dtm/0.5));
+  B.forEach(b => { for (let k=0;k<n;k++) stepB(b, dtm/n); });
+  render();
+}, 250);
+setInterval(tick, 1000);
+if (mq.addEventListener) mq.addEventListener('change', render);
+})();
+</script>

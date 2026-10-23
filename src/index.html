@@ -1,0 +1,114 @@
+<title>Makom Otomasyon</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: entry hub — site plan as the hero, three module cards beneath, same HMI identity as the panels */
+:root{
+  --ground:#e8f0f9; --panel:#f6faff; --card:#ffffff; --line:#b7cfeb; --line-2:#d5e4f5;
+  --ink:#0a2463; --ink-2:#34507f; --muted:#6a7fa4; --tint:#eaf3fd; --blue:#1b5fd9; --blue-2:#0b46b5;
+  --soil:#6b3d1f; --ok:#15803d;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-ui:"Barlow Semi Condensed","Segoe UI",Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--f-ui);font-size:16px}
+.wrap{max-width:1280px;margin:0 auto;padding-block:14px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.sitenav{display:flex;align-items:center;gap:4px 6px;flex-wrap:wrap;font:600 14px var(--f-ui)}
+.sitenav a{color:var(--ink-2);text-decoration:none;padding:6px 12px;border-radius:5px;border:1.5px solid transparent}
+.sitenav a:hover{border-color:var(--line)}
+.sitenav a[aria-current="page"]{background:var(--ink);color:#fff}
+.sitenav .sn-brand{font:800 16px var(--f-display);color:var(--ink);letter-spacing:.06em;margin-right:6px}
+header{display:flex;flex-direction:column;gap:6px}
+h1{margin:0;font:800 clamp(34px,5vw,56px)/1 var(--f-display);letter-spacing:.01em;text-wrap:balance}
+h1 span{color:var(--blue)}
+.credit{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.credit b{color:var(--ink);font-weight:800;letter-spacing:.12em}
+.lede{margin:0;max-width:68ch;color:var(--ink-2);font-size:17px;line-height:1.5}
+h2{margin:0;font:800 24px var(--f-display);letter-spacing:.01em}
+.plan{background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.plan-scroll{overflow-x:auto}
+.plan svg{display:block;width:100%;height:auto}
+.plan svg text{font-family:var(--f-ui)}
+.zone{cursor:pointer}
+.zone rect.z{transition:fill .15s}
+.zone:hover rect.z,.zone:focus rect.z{fill:#dbe9fb}
+.cap{font-size:13px;color:var(--muted)}
+.mods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.mod{display:flex;flex-direction:column;gap:8px;padding:16px 18px;background:var(--card);border:1.5px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);min-width:0}
+.mod:hover{border-color:var(--blue);box-shadow:0 6px 18px rgba(10,36,99,.08)}
+.mod .tag{font-size:12.5px;font-weight:700;letter-spacing:.08em;color:var(--blue-2)}
+.mod b{font:800 28px/1.05 var(--f-display)}
+.mod p{margin:0;color:var(--ink-2);line-height:1.45;font-size:15px}
+.mod ul{margin:0;padding-left:1.1em;color:var(--ink-2);font-size:14.5px;display:flex;flex-direction:column;gap:3px}
+.mod .go{margin-top:auto;font-weight:700;color:var(--blue-2)}
+.foot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.foot b{color:var(--ink);letter-spacing:.1em}
+@media (max-width:900px){ .mods{grid-template-columns:1fr} }
+@media (max-width:520px){ .plan{padding:10px} .lede{font-size:16px} }
+</style>
+
+<div class="wrap">
+  <nav class="sitenav" aria-label="MAKOM modülleri"><a class="sn-brand" href="./" aria-current="page">MAKOM</a><a href="bunker.html">Faz 1 Bunker</a><a href="tunel.html">Faz 2 Tünel</a><a href="oda.html">Üretim Odaları</a></nav>
+
+  <header>
+    <h1>MAKOM <span>Otomasyon</span></h1>
+    <span class="credit">created by <b>GOTONOM</b></span>
+    <p class="lede">Kompost sahasından üretim odalarına kadar tesisin üç otomasyon paneli. PLC bağlantısı kurulana kadar her panel kendi sürecini örnek veriyle simüle eder.</p>
+  </header>
+
+  <section class="plan" aria-labelledby="planh">
+    <h2 id="planh">Kompost sahası</h2>
+    <div class="plan-scroll">
+      <svg viewBox="0 0 700 500" role="img" aria-label="Kompost sahası planı: üç bunker, dört tünel">
+        <rect x="1" y="1" width="698" height="498" fill="#f7fafd" stroke="var(--ink)" stroke-width="2"/>
+        <a href="bunker.html" class="zone" aria-label="Faz 1 bunkerler">
+          <rect class="z" x="20" y="10" width="314" height="380" fill="#eef4fb" stroke="var(--ink-2)" stroke-width="1.5"/>
+          <g fill="#7a4825" opacity=".85"><rect x="32" y="22" width="290" height="110"/><rect x="32" y="144" width="290" height="110"/><rect x="32" y="266" width="290" height="110"/></g>
+          <g font-size="30" font-weight="800" fill="#fff" text-anchor="middle"><text x="177" y="84">B1</text><text x="177" y="206">B2</text><text x="177" y="328">B3</text></g>
+          <g font-size="13" fill="#fff" text-anchor="middle"><text x="177" y="104">18,00 × 7,20 m</text><text x="177" y="226">18,00 × 7,20 m</text><text x="177" y="348">18,00 × 7,20 m</text></g>
+        </a>
+        <rect x="370" y="20" width="110" height="70" fill="#fff" stroke="#9aa8bf"/><text x="425" y="60" text-anchor="middle" font-size="13" fill="var(--ink-2)">Bandırma havuzu</text>
+        <rect x="520" y="20" width="110" height="70" fill="#fff" stroke="#9aa8bf"/><text x="575" y="60" text-anchor="middle" font-size="13" fill="var(--ink-2)">Topraklama havuzu</text>
+        <text x="520" y="230" text-anchor="middle" font-size="16" font-weight="700" fill="var(--muted)">A1 · açık çalışma sahası</text>
+        <rect x="390" y="290" width="110" height="190" fill="#eef1f5" stroke="#9aa8bf"/><text x="445" y="380" text-anchor="middle" font-size="13" fill="var(--ink-2)">Tünel yükleme</text><text x="445" y="396" text-anchor="middle" font-size="13" fill="var(--ink-2)">holü</text>
+        <a href="tunel.html" class="zone" aria-label="Faz 2 tüneller">
+          <rect class="z" x="502" y="292" width="150" height="176" fill="#eef4fb" stroke="var(--ink-2)" stroke-width="1.5"/>
+          <g fill="#7a4825" opacity=".85"><rect x="510" y="298" width="134" height="36"/><rect x="510" y="340" width="134" height="36"/><rect x="510" y="382" width="134" height="36"/><rect x="510" y="424" width="134" height="36"/></g>
+          <g font-size="16" font-weight="800" fill="#fff" text-anchor="middle"><text x="577" y="322">T4</text><text x="577" y="364">T3</text><text x="577" y="406">T2</text><text x="577" y="448">T1</text></g>
+          <rect x="652" y="292" width="34" height="176" fill="#dfe8f3" stroke="var(--ink-2)" stroke-dasharray="4 3"/>
+          <text x="669" y="380" text-anchor="middle" font-size="11" fill="var(--ink-2)" transform="rotate(-90 669 380)">FAN / DAMPER</text>
+        </a>
+        <rect x="40" y="420" width="130" height="60" fill="#fff" stroke="#c9b27a" stroke-dasharray="4 3"/><text x="105" y="455" text-anchor="middle" font-size="13" fill="var(--ink-2)">Sap stoku</text>
+        <text x="350" y="492" text-anchor="middle" font-size="12" fill="var(--muted)">70 × 50 m · 1:200 plandan şematik</text>
+      </svg>
+    </div>
+    <p class="cap">Bunkere ya da tünele dokunun, ilgili panel açılır. Üretim odaları (20 oda, 7,00 × 18,00 m) ayrı binadadır.</p>
+  </section>
+
+  <section class="mods" aria-label="Paneller">
+    <a class="mod" href="bunker.html">
+      <span class="tag">FAZ 1</span><b>Bunker otomasyonu</b>
+      <p>Üç bunkerde fermentasyon. Fan 5 dk çalışır, 25 dk durur; gerekirse 6–7 dk'ya uzar, 7 dk PLC sınırıdır.</p>
+      <ul><li>8 kompost probu ve °C/saat değişim hızı</li><li>5 dk çevrim oranı, hedef ≈ %90</li><li>Dolum, 3 fermentasyon, boşaltma</li></ul>
+      <span class="go">Paneli aç →</span>
+    </a>
+    <a class="mod" href="tunel.html">
+      <span class="tag">FAZ 2</span><b>Tünel otomasyonu</b>
+      <p>Pastörizasyon ve kondisyonlama. 30 kW fan, 18.000 m³/h, 4.000 Pa, Danfoss FC 102 invertör.</p>
+      <ul><li>7 etaplı tarif, otomatik geçiş</li><li>Fan ve damperde manuel müdahale</li><li>Alarm senaryoları</li></ul>
+      <span class="go">Paneli aç →</span>
+    </a>
+    <a class="mod" href="oda.html">
+      <span class="tag">ÜRETİM</span><b>Üretim odaları</b>
+      <p>20 odanın iklim kontrolü: sıcaklık, nem, CO₂ ve taze hava, 52 günlük üretim döngüsü boyunca.</p>
+      <ul><li>Kuluçkadan boşaltmaya 7 etap</li><li>Oda bazında setpoint ve alarm</li><li>20 odanın tesis görünümü</li></ul>
+      <span class="go">Paneli aç →</span>
+    </a>
+  </section>
+
+  <footer class="foot"><span>MAKOM Kompost · otomasyon panelleri · demo simülasyonu</span><span>Created by <b>GOTONOM</b></span></footer>
+</div>
