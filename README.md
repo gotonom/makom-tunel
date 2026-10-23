@@ -23,6 +23,10 @@ PLC bağlantısı kurulana kadar her panel örnek veriyle çalışan bir simüla
 | `docs/` | Yayınlanan sayfalar (GitHub Pages bu klasörü sunar) |
 | `server.js` | Railway'de `docs/` sayfalarını `$PORT` üzerinden sunan bağımlılıksız Node sunucusu |
 
+## Paylaşım kartları (Open Graph)
+
+Her sayfanın 1200 × 630 paylaşım görseli `docs/og/` içinde. Kaynağı `og/og.html` (#index, #bunker, #tunel, #oda); `python3 og/render.py` headless Chrome ile yeniden üretir. Meta etiketlerini `build.py` ekler.
+
 ## Güncelleme
 
 ```bash
