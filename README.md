@@ -4,7 +4,7 @@ Kompost sahası ve mantar üretim tesisi için otomasyon panelleri ve süreç si
 
 | Sayfa | Kaynak | Ne |
 |---|---|---|
-| `/` | `src/index.html` | Saha planı ve panellere giriş |
+| `/` | `src/index.html` | Tesis kontrol merkezi: 27 ünitenin canlı saha planı, kompost yolculuğu, üretim takvimi, enerji, alarmlar |
 | `/bunker.html` | `src/bunker.html` | Faz 1 · 3 bunker, fan 5/25 dk, 6–7 dk otomatik uzatma, 7 dk PLC sınırı |
 | `/tunel.html` | `src/dashboard.html` | Faz 2 · tünel pastörizasyon ve kondisyonlama |
 | `/oda.html` | `src/oda.html` | Üretim odaları · 20 oda, 52 günlük döngü |

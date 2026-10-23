@@ -1,114 +1,716 @@
-<title>Makom Otomasyon</title>
+<title>Makom Kontrol Merkezi</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow+Semi+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
-/* Layout: entry hub — site plan as the hero, three module cards beneath, same HMI identity as the panels */
+/* Layout: night-shift control room — live site plans as the hero, the compost "conveyor" across three phases,
+   operator queue + alarm feed beside it, production calendar and energy below. Dark first, light on request. */
 :root{
-  --ground:#e8f0f9; --panel:#f6faff; --card:#ffffff; --line:#b7cfeb; --line-2:#d5e4f5;
-  --ink:#0a2463; --ink-2:#34507f; --muted:#6a7fa4; --tint:#eaf3fd; --blue:#1b5fd9; --blue-2:#0b46b5;
-  --soil:#6b3d1f; --ok:#15803d;
+  --bg:#050d1c; --bg-2:#08142a; --panel:#0c1a33; --panel-2:#10223f; --line:#1c3256; --line-2:#152a4a;
+  --ink:#e7efff; --ink-2:#a8bbdc; --muted:#6f86ae; --accent:#38bdf8; --accent-2:#a78bfa;
+  --ok:#34d399; --warn:#fbbf24; --crit:#fb7185; --soil:#7a4a26; --grid:rgba(56,189,248,.06);
+  --shadow:0 10px 30px rgba(0,0,0,.35);
   --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
   --f-ui:"Barlow Semi Condensed","Segoe UI",Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+:root[data-theme="light"]{
+  --bg:#eef3fa; --bg-2:#e4ecf7; --panel:#ffffff; --panel-2:#f4f8fe; --line:#c9d8ee; --line-2:#dde8f6;
+  --ink:#0a2463; --ink-2:#34507f; --muted:#6a7fa4; --accent:#0b6fd9; --accent-2:#6d28d9;
+  --ok:#15803d; --warn:#b45309; --crit:#dc2626; --soil:#7a4a26; --grid:rgba(11,111,217,.05);
+  --shadow:0 8px 24px rgba(10,36,99,.10);
   color-scheme:light;
 }
 *{box-sizing:border-box}
-body{background:var(--ground);color:var(--ink);font-family:var(--f-ui);font-size:16px}
-.wrap{max-width:1280px;margin:0 auto;padding-block:14px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
-a:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+html{background:var(--bg)}
+body{background:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:32px 32px;color:var(--ink);font-family:var(--f-ui);font-size:15px}
+.wrap{max-width:1600px;margin:0 auto;padding-block:12px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
+.num,.mono{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--f-mono)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .sitenav{display:flex;align-items:center;gap:4px 6px;flex-wrap:wrap;font:600 14px var(--f-ui)}
-.sitenav a{color:var(--ink-2);text-decoration:none;padding:6px 12px;border-radius:5px;border:1.5px solid transparent}
+.sitenav a{color:var(--ink-2);text-decoration:none;padding:6px 12px;border-radius:6px;border:1px solid transparent}
 .sitenav a:hover{border-color:var(--line)}
-.sitenav a[aria-current="page"]{background:var(--ink);color:#fff}
-.sitenav .sn-brand{font:800 16px var(--f-display);color:var(--ink);letter-spacing:.06em;margin-right:6px}
-header{display:flex;flex-direction:column;gap:6px}
-h1{margin:0;font:800 clamp(34px,5vw,56px)/1 var(--f-display);letter-spacing:.01em;text-wrap:balance}
-h1 span{color:var(--blue)}
-.credit{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.credit b{color:var(--ink);font-weight:800;letter-spacing:.12em}
-.lede{margin:0;max-width:68ch;color:var(--ink-2);font-size:17px;line-height:1.5}
-h2{margin:0;font:800 24px var(--f-display);letter-spacing:.01em}
-.plan{background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
-.plan-scroll{overflow-x:auto}
-.plan svg{display:block;width:100%;height:auto}
-.plan svg text{font-family:var(--f-ui)}
-.zone{cursor:pointer}
-.zone rect.z{transition:fill .15s}
-.zone:hover rect.z,.zone:focus rect.z{fill:#dbe9fb}
-.cap{font-size:13px;color:var(--muted)}
-.mods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.mod{display:flex;flex-direction:column;gap:8px;padding:16px 18px;background:var(--card);border:1.5px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);min-width:0}
-.mod:hover{border-color:var(--blue);box-shadow:0 6px 18px rgba(10,36,99,.08)}
-.mod .tag{font-size:12.5px;font-weight:700;letter-spacing:.08em;color:var(--blue-2)}
-.mod b{font:800 28px/1.05 var(--f-display)}
-.mod p{margin:0;color:var(--ink-2);line-height:1.45;font-size:15px}
-.mod ul{margin:0;padding-left:1.1em;color:var(--ink-2);font-size:14.5px;display:flex;flex-direction:column;gap:3px}
-.mod .go{margin-top:auto;font-weight:700;color:var(--blue-2)}
-.foot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
-.foot b{color:var(--ink);letter-spacing:.1em}
-@media (max-width:900px){ .mods{grid-template-columns:1fr} }
-@media (max-width:520px){ .plan{padding:10px} .lede{font-size:16px} }
+.sitenav a[aria-current="page"]{background:var(--accent);color:#04101f}
+.sitenav .sn-brand{font:800 16px var(--f-display);color:var(--ink);letter-spacing:.08em;margin-right:6px}
+
+/* header */
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px 24px;flex-wrap:wrap}
+.title{display:flex;flex-direction:column;gap:6px;min-width:0}
+.eyebrow{font:600 12.5px var(--f-mono);letter-spacing:.14em;color:var(--accent);text-transform:uppercase;display:flex;gap:8px;align-items:center}
+.live{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(52,211,153,.6);animation:live 2s infinite}
+@keyframes live{0%{box-shadow:0 0 0 0 rgba(52,211,153,.55)}70%{box-shadow:0 0 0 9px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+h1{margin:0;font:800 clamp(32px,4.6vw,60px)/.95 var(--f-display);letter-spacing:.01em;text-wrap:balance}
+h1 span{color:var(--accent)}
+.sum{margin:0;color:var(--ink-2);font-size:16px;max-width:72ch}
+.sum b{color:var(--ink)}
+.credit{font-size:12.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.credit b{color:var(--ink);letter-spacing:.14em}
+.hctl{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap}
+.clock{display:flex;flex-direction:column;justify-content:center;padding:6px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel);line-height:1.1}
+.clock small{font:600 11px var(--f-mono);letter-spacing:.1em;color:var(--muted)}
+.clock b{font:600 20px var(--f-mono)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:transparent;padding:0 11px;min-height:40px;font:600 13.5px var(--f-mono);color:var(--ink-2);cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#04101f}
+.ibtn{display:inline-flex;align-items:center;gap:8px;padding:0 12px;min-height:40px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;font-weight:700;font-size:14px}
+.ibtn svg{width:18px;height:18px}
+.ibtn:hover{border-color:var(--accent)}
+.bell.on{background:var(--crit);border-color:var(--crit);color:#fff}
+.bell.warn{background:var(--warn);border-color:var(--warn);color:#1a1200}
+.demo{font:600 11px var(--f-mono);letter-spacing:.1em;color:#1a1200;background:var(--warn);border-radius:4px;padding:3px 7px;align-self:center}
+
+/* panels */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+.ch{display:flex;align-items:baseline;justify-content:space-between;gap:6px 14px;flex-wrap:wrap;padding:14px 16px 0}
+.ch h2{margin:0;font:800 22px var(--f-display);letter-spacing:.02em;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.ch h2 small{font:600 12px var(--f-mono);letter-spacing:.08em;color:var(--muted)}
+.ch .aside{font-size:13px;color:var(--muted)}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.kpi{padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0;position:relative;overflow:hidden}
+.kpi .l{font:600 11.5px var(--f-mono);letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.kpi .v{font:700 34px/1 var(--f-display);display:flex;align-items:baseline;gap:5px;white-space:nowrap}
+.kpi .v small{font-size:16px;color:var(--ink-2);font-weight:600}
+.kpi .s{font-size:13px;color:var(--ink-2);line-height:1.3}
+.kpi .spark{position:absolute;inset:auto 0 0 0;height:30px;opacity:.55;pointer-events:none}
+.kpi.crit .v{color:var(--crit)} .kpi.warn .v{color:var(--warn)} .kpi.ok .v{color:var(--ok)}
+.kpi .bar{display:flex;height:6px;border-radius:3px;overflow:hidden;margin-top:4px;background:var(--line-2)}
+.kpi .bar i{display:block;height:100%}
+
+/* site maps */
+.maps{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);gap:14px}
+.map{display:flex;flex-direction:column;min-width:0}
+.map svg{display:block;width:100%;height:auto;padding:6px 10px 10px}
+.map text{font-family:var(--f-ui)}
+.u{cursor:pointer}
+.u .hit{fill:transparent}
+.u:hover .shape,.u:focus .shape{stroke:var(--accent);stroke-width:2.5}
+.u.sel .shape{stroke:var(--ink);stroke-width:3}
+.u:focus{outline:none}
+.flowline{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-dasharray:6 8;animation:dash 1.6s linear infinite;opacity:.8}
+@keyframes dash{to{stroke-dashoffset:-28}}
+.ring{fill:none;stroke:var(--ok);stroke-width:2}
+.u.fan .ring{animation:ring 1.2s ease-out infinite}
+@keyframes ring{0%{r:4;opacity:1}100%{r:13;opacity:0}}
+.legend{display:flex;gap:6px 14px;flex-wrap:wrap;padding:0 16px 14px;font-size:12.5px;color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+/* conveyor */
+.mid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px}
+.conv{display:flex;flex-direction:column;gap:6px;padding-bottom:12px}
+.lane{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px;align-items:center;padding:10px 16px 4px}
+.lane .lh{display:flex;flex-direction:column;gap:2px}
+.lane .lh b{font:800 20px var(--f-display);letter-spacing:.02em}
+.lane .lh span{font-size:12.5px;color:var(--muted)}
+.track{position:relative;height:var(--h,58px);border-radius:8px;background:linear-gradient(90deg,var(--panel-2),var(--bg-2));border:1px solid var(--line-2)}
+.track .seg-bg{position:absolute;top:0;bottom:0;opacity:.16}
+.track .tick{position:absolute;bottom:2px;font:500 10.5px var(--f-mono);color:var(--muted);transform:translateX(-50%)}
+.track .sl{position:absolute;top:3px;font:600 10.5px var(--f-mono);color:var(--muted);letter-spacing:.04em;white-space:nowrap;overflow:hidden;padding-left:4px}
+.chipu{position:absolute;transform:translate(-50%,-50%);min-width:30px;height:24px;padding:0 6px;border-radius:12px;border:2px solid var(--panel);font:700 12px var(--f-mono);color:#04101f;cursor:pointer;display:grid;place-items:center;box-shadow:0 2px 8px rgba(0,0,0,.35);transition:left .6s linear}
+.chipu:hover{transform:translate(-50%,-50%) scale(1.15);z-index:2}
+.chipu.idle{background:var(--line)!important;color:var(--ink-2)}
+.arrowdown{display:flex;justify-content:flex-start;padding-left:182px;color:var(--muted);font:600 11px var(--f-mono);letter-spacing:.08em;gap:6px;align-items:center}
+
+/* queue + alarms */
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.list{list-style:none;margin:0;padding:8px 10px 12px;display:flex;flex-direction:column;gap:6px}
+.ev{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:8px 10px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line-2);cursor:pointer;text-align:left;width:100%}
+.ev:hover{border-color:var(--accent)}
+.ev .sw{width:10px;height:34px;border-radius:3px;grid-row:span 2}
+.ev b{font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev span{font-size:12.5px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev .when{grid-row:span 2;text-align:right;font:600 14px var(--f-mono)}
+.ev .when small{display:block;font-size:10.5px;color:var(--muted);letter-spacing:.06em}
+.ev .tag,.tag{color:#04101f}
+.tag{display:inline-block;font:600 10px var(--f-mono);letter-spacing:.08em;padding:1px 6px;border-radius:3px;background:var(--accent);color:#04101f;margin-left:6px;vertical-align:1px}
+.al{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:8px 10px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line-2);border-left:4px solid var(--warn)}
+.al.crit{border-left-color:var(--crit)}
+.al.ack{opacity:.55}
+.al .sev{font:600 10px var(--f-mono);letter-spacing:.08em;padding:2px 6px;border-radius:3px;background:var(--warn);color:#1a1200;grid-row:span 2}
+.al.crit .sev{background:var(--crit);color:#fff}
+.al b{font-size:14px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.al span{font-size:12.5px;color:var(--ink-2)}
+.al button{grid-row:span 2;border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:0 10px;min-height:32px;cursor:pointer;font-size:13px;font-weight:600}
+.al button:hover{border-color:var(--accent)}
+.empty{padding:10px 12px;border-radius:8px;border:1px dashed var(--line);color:var(--ok);font-weight:600}
+
+/* calendar */
+.gantt-wrap{overflow-x:auto;padding:4px 6px 12px}
+#gantt{display:block}
+#gantt text{font-family:var(--f-ui)}
+.g-row{cursor:pointer}
+.g-row:hover .g-lab{fill:var(--accent)}
+
+/* energy */
+.bottom{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px}
+#energy{display:block;width:100%;height:auto;padding:6px 10px 10px}
+.split{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.split .row{display:grid;grid-template-columns:110px minmax(0,1fr) 92px;gap:10px;align-items:center;font-size:14px}
+.split .row .b{height:12px;border-radius:6px;background:var(--line-2);overflow:hidden}
+.split .row .b i{display:block;height:100%;border-radius:6px}
+.split .row b{font:700 18px var(--f-display);text-align:right}
+.note{font-size:12.5px;color:var(--muted);line-height:1.45}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(2,6,16,.45);z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;z-index:21;top:0;right:0;bottom:0;width:min(400px,100%);background:var(--panel);border-left:1px solid var(--line);box-shadow:var(--shadow);transform:translateX(105%);transition:transform .25s ease;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 16px) max(18px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 16px) 18px;gap:14px;overflow-y:auto}
+.drawer.on{transform:none}
+.dh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.dh h3{margin:0;font:800 30px/1 var(--f-display)}
+.dh small{display:block;font:600 11.5px var(--f-mono);letter-spacing:.1em;color:var(--muted);margin-bottom:4px}
+.x{border:1px solid var(--line);background:var(--panel-2);border-radius:8px;width:40px;height:40px;cursor:pointer;font-size:20px;flex:none}
+.stchip{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:14px;padding:4px 10px;border-radius:20px;background:var(--panel-2);border:1px solid var(--line)}
+.stchip i{width:10px;height:10px;border-radius:50%}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dm{padding:10px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line-2)}
+.dm span{display:block;font:600 11px var(--f-mono);letter-spacing:.08em;color:var(--muted)}
+.dm b{font:700 26px var(--f-display)}
+.dm b small{font-size:15px;color:var(--ink-2)}
+.pb{height:8px;border-radius:4px;background:var(--line-2);overflow:hidden}
+.pb i{display:block;height:100%;background:var(--accent)}
+.trace{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font:600 13px var(--f-mono)}
+.trace span{padding:3px 8px;border-radius:5px;background:var(--panel-2);border:1px solid var(--line)}
+.trace span.now{border-color:var(--accent);color:var(--accent)}
+.go{display:flex;justify-content:center;align-items:center;gap:8px;min-height:46px;border-radius:10px;background:var(--accent);color:#04101f;font-weight:800;font-size:16px;text-decoration:none;letter-spacing:.02em}
+#dSpark{width:100%;height:70px;display:block}
+
+.foot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.foot b{color:var(--ink);letter-spacing:.12em}
+
+@media (max-width:1280px){
+  .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .mid,.bottom{grid-template-columns:1fr}
+  .side{display:grid;grid-template-columns:1fr 1fr}
+}
+@media (max-width:980px){ .maps{grid-template-columns:1fr} }
+@media (max-width:760px){
+  .side{grid-template-columns:1fr}
+  .lane{grid-template-columns:1fr;gap:6px;padding:10px 12px 2px}
+  .lane .lh{flex-direction:row;align-items:baseline;gap:8px}
+  .arrowdown{padding-left:14px}
+}
+@media (max-width:640px){
+  .map .fine{display:none}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpi .v{font-size:28px}
+  .head{align-items:flex-start}
+  .hctl{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .hctl .clock{grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center}
+  .seg{grid-column:1/-1}
+  .seg button{flex:1}
+  .ibtn{justify-content:center}
+  .split .row{grid-template-columns:84px minmax(0,1fr) 80px}
+  .drawer{top:auto;width:100%;max-height:82vh;border-left:0;border-top:1px solid var(--line);border-radius:16px 16px 0 0;transform:translateY(105%)}
+  .drawer.on{transform:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
 <div class="wrap">
   <nav class="sitenav" aria-label="MAKOM modülleri"><a class="sn-brand" href="./" aria-current="page">MAKOM</a><a href="bunker.html">Faz 1 Bunker</a><a href="tunel.html">Faz 2 Tünel</a><a href="oda.html">Üretim Odaları</a></nav>
 
-  <header>
-    <h1>MAKOM <span>Otomasyon</span></h1>
-    <span class="credit">created by <b>GOTONOM</b></span>
-    <p class="lede">Kompost sahasından üretim odalarına kadar tesisin üç otomasyon paneli. PLC bağlantısı kurulana kadar her panel kendi sürecini örnek veriyle simüle eder.</p>
+  <header class="head">
+    <div class="title">
+      <span class="eyebrow"><i class="live"></i>Tesis kontrol merkezi · canlı simülasyon</span>
+      <h1>MAKOM <span>Kontrol Merkezi</span></h1>
+      <p class="sum" id="summary">—</p>
+      <span class="credit">created by <b>GOTONOM</b></span>
+    </div>
+    <div class="hctl">
+      <div class="clock"><small id="simDate">—</small><b id="simClock">--:--:--</b></div>
+      <span class="seg" id="speedSeg" role="group" aria-label="Simülasyon hızı">
+        <button type="button" data-s="1" aria-pressed="false">1×</button>
+        <button type="button" data-s="60" aria-pressed="true">60×</button>
+        <button type="button" data-s="600" aria-pressed="false">600×</button>
+        <button type="button" data-s="3600" aria-pressed="false">3600×</button>
+      </span>
+      <button type="button" class="ibtn" id="themeBtn" aria-label="Tema değiştir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span id="themeLbl">Açık tema</span></button>
+      <button type="button" class="ibtn bell" id="bellBtn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.4-2h-4.8a2.5 2.5 0 0 0 2.4 2zm7-6V11a7 7 0 0 0-5.5-6.8V3a1.5 1.5 0 0 0-3 0v1.2A7 7 0 0 0 5 11v5l-2 2v1h18v-1z"/></svg><span id="bellN" class="num">0</span> alarm</button>
+    </div>
   </header>
 
-  <section class="plan" aria-labelledby="planh">
-    <h2 id="planh">Kompost sahası</h2>
-    <div class="plan-scroll">
-      <svg viewBox="0 0 700 500" role="img" aria-label="Kompost sahası planı: üç bunker, dört tünel">
-        <rect x="1" y="1" width="698" height="498" fill="#f7fafd" stroke="var(--ink)" stroke-width="2"/>
-        <a href="bunker.html" class="zone" aria-label="Faz 1 bunkerler">
-          <rect class="z" x="20" y="10" width="314" height="380" fill="#eef4fb" stroke="var(--ink-2)" stroke-width="1.5"/>
-          <g fill="#7a4825" opacity=".85"><rect x="32" y="22" width="290" height="110"/><rect x="32" y="144" width="290" height="110"/><rect x="32" y="266" width="290" height="110"/></g>
-          <g font-size="30" font-weight="800" fill="#fff" text-anchor="middle"><text x="177" y="84">B1</text><text x="177" y="206">B2</text><text x="177" y="328">B3</text></g>
-          <g font-size="13" fill="#fff" text-anchor="middle"><text x="177" y="104">18,00 × 7,20 m</text><text x="177" y="226">18,00 × 7,20 m</text><text x="177" y="348">18,00 × 7,20 m</text></g>
-        </a>
-        <rect x="370" y="20" width="110" height="70" fill="#fff" stroke="#9aa8bf"/><text x="425" y="60" text-anchor="middle" font-size="13" fill="var(--ink-2)">Bandırma havuzu</text>
-        <rect x="520" y="20" width="110" height="70" fill="#fff" stroke="#9aa8bf"/><text x="575" y="60" text-anchor="middle" font-size="13" fill="var(--ink-2)">Topraklama havuzu</text>
-        <text x="520" y="230" text-anchor="middle" font-size="16" font-weight="700" fill="var(--muted)">A1 · açık çalışma sahası</text>
-        <rect x="390" y="290" width="110" height="190" fill="#eef1f5" stroke="#9aa8bf"/><text x="445" y="380" text-anchor="middle" font-size="13" fill="var(--ink-2)">Tünel yükleme</text><text x="445" y="396" text-anchor="middle" font-size="13" fill="var(--ink-2)">holü</text>
-        <a href="tunel.html" class="zone" aria-label="Faz 2 tüneller">
-          <rect class="z" x="502" y="292" width="150" height="176" fill="#eef4fb" stroke="var(--ink-2)" stroke-width="1.5"/>
-          <g fill="#7a4825" opacity=".85"><rect x="510" y="298" width="134" height="36"/><rect x="510" y="340" width="134" height="36"/><rect x="510" y="382" width="134" height="36"/><rect x="510" y="424" width="134" height="36"/></g>
-          <g font-size="16" font-weight="800" fill="#fff" text-anchor="middle"><text x="577" y="322">T4</text><text x="577" y="364">T3</text><text x="577" y="406">T2</text><text x="577" y="448">T1</text></g>
-          <rect x="652" y="292" width="34" height="176" fill="#dfe8f3" stroke="var(--ink-2)" stroke-dasharray="4 3"/>
-          <text x="669" y="380" text-anchor="middle" font-size="11" fill="var(--ink-2)" transform="rotate(-90 669 380)">FAN / DAMPER</text>
-        </a>
-        <rect x="40" y="420" width="130" height="60" fill="#fff" stroke="#c9b27a" stroke-dasharray="4 3"/><text x="105" y="455" text-anchor="middle" font-size="13" fill="var(--ink-2)">Sap stoku</text>
-        <text x="350" y="492" text-anchor="middle" font-size="12" fill="var(--muted)">70 × 50 m · 1:200 plandan şematik</text>
-      </svg>
+  <section class="kpis" id="kpis" aria-label="Tesis özeti"></section>
+
+  <section class="maps" aria-label="Saha planları">
+    <div class="card map">
+      <div class="ch"><h2>Kompost sahası <small>70 × 50 m · 1:200 plandan</small></h2><span class="aside">Bunker veya tünele dokunun</span></div>
+      <svg id="yard" viewBox="0 0 600 440" role="group" aria-label="Kompost sahası: 3 bunker, 4 tünel"></svg>
+      <div class="legend" id="yardLegend"></div>
     </div>
-    <p class="cap">Bunkere ya da tünele dokunun, ilgili panel açılır. Üretim odaları (20 oda, 7,00 × 18,00 m) ayrı binadadır.</p>
+    <div class="card map">
+      <div class="ch"><h2>Üretim binası <small>20 oda · 7,00 × 18,00 m · 5 m koridor</small></h2><span class="aside">Odaya dokunun</span></div>
+      <svg id="farm" viewBox="0 0 600 400" role="group" aria-label="Üretim binası: 20 oda"></svg>
+      <div class="legend" id="farmLegend"></div>
+    </div>
   </section>
 
-  <section class="mods" aria-label="Paneller">
-    <a class="mod" href="bunker.html">
-      <span class="tag">FAZ 1</span><b>Bunker otomasyonu</b>
-      <p>Üç bunkerde fermentasyon. Fan 5 dk çalışır, 25 dk durur; gerekirse 6–7 dk'ya uzar, 7 dk PLC sınırıdır.</p>
-      <ul><li>8 kompost probu ve °C/saat değişim hızı</li><li>5 dk çevrim oranı, hedef ≈ %90</li><li>Dolum, 3 fermentasyon, boşaltma</li></ul>
-      <span class="go">Paneli aç →</span>
-    </a>
-    <a class="mod" href="tunel.html">
-      <span class="tag">FAZ 2</span><b>Tünel otomasyonu</b>
-      <p>Pastörizasyon ve kondisyonlama. 30 kW fan, 18.000 m³/h, 4.000 Pa, Danfoss FC 102 invertör.</p>
-      <ul><li>7 etaplı tarif, otomatik geçiş</li><li>Fan ve damperde manuel müdahale</li><li>Alarm senaryoları</li></ul>
-      <span class="go">Paneli aç →</span>
-    </a>
-    <a class="mod" href="oda.html">
-      <span class="tag">ÜRETİM</span><b>Üretim odaları</b>
-      <p>20 odanın iklim kontrolü: sıcaklık, nem, CO₂ ve taze hava, 52 günlük üretim döngüsü boyunca.</p>
-      <ul><li>Kuluçkadan boşaltmaya 7 etap</li><li>Oda bazında setpoint ve alarm</li><li>20 odanın tesis görünümü</li></ul>
-      <span class="go">Paneli aç →</span>
-    </a>
+  <div class="mid">
+    <section class="card conv" aria-label="Kompost yolculuğu">
+      <div class="ch"><h2>Kompost yolculuğu <small>her çip bir ünite · etabındaki ilerlemesi</small></h2><span class="aside">Örnek planlama: her 72 saatte bir yeni parti</span></div>
+      <div id="lanes"></div>
+    </section>
+    <div class="side">
+      <section class="card" aria-label="Sıradaki işlemler">
+        <div class="ch"><h2>Sıradaki işlemler <small>48 saat</small></h2></div>
+        <ul class="list" id="queue"></ul>
+      </section>
+      <section class="card" id="alarmCard" aria-label="Alarmlar">
+        <div class="ch"><h2>Alarmlar <small id="alSub">tüm tesis</small></h2></div>
+        <ul class="list" id="alarms"></ul>
+      </section>
+    </div>
+  </div>
+
+  <section class="card" aria-label="Üretim takvimi">
+    <div class="ch"><h2>Üretim takvimi <small>−2 gün … +14 gün · 27 ünite</small></h2><span class="aside">Satıra dokunun, ünite detayı açılır</span></div>
+    <div class="gantt-wrap"><svg id="gantt" role="img" aria-label="Ünitelerin etap takvimi"></svg></div>
   </section>
 
-  <footer class="foot"><span>MAKOM Kompost · otomasyon panelleri · demo simülasyonu</span><span>Created by <b>GOTONOM</b></span></footer>
+  <div class="bottom">
+    <section class="card" aria-label="Enerji">
+      <div class="ch"><h2>Fan gücü <small>son 48 saat · kW · 15 dk ortalama</small></h2><span class="aside" id="eAside">—</span></div>
+      <svg id="energy" viewBox="0 0 900 260" role="img" aria-label="Son 48 saatin alana göre fan gücü"></svg>
+    </section>
+    <section class="card split" aria-label="Alan bazında enerji">
+      <h2 style="margin:0;font:800 22px var(--f-display)">Bugünkü enerji</h2>
+      <div id="split"></div>
+      <p class="note" id="specNote">Bunker fanı ve oda klima santrali değerleri doğrulanacak. Tünel fanı: 30 kW, 1.450 d/dk, 18.000 m³/h, 4.000 Pa.</p>
+    </section>
+  </div>
+
+  <footer class="foot"><span>MAKOM Kompost · tesis kontrol merkezi · PLC bağlantısı kurulana kadar örnek veri</span><span>Created by <b>GOTONOM</b></span></footer>
 </div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Ünite detayı" aria-hidden="true">
+  <div class="dh"><div><small id="dKind">—</small><h3 id="dName">—</h3></div><button type="button" class="x" id="dClose" aria-label="Kapat">×</button></div>
+  <span class="stchip" id="dStage"><i></i><span>—</span></span>
+  <div><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink-2);margin-bottom:6px"><span id="dProgL">—</span><span id="dProgR" class="mono">—</span></div><div class="pb"><i id="dProg"></i></div></div>
+  <div class="dgrid" id="dGrid"></div>
+  <div><div class="note" style="margin-bottom:4px">Son 24 saat · sıcaklık</div><svg id="dSpark" viewBox="0 0 360 70" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+  <div><div class="note" style="margin-bottom:6px" id="dTraceL">Parti izi</div><div class="trace" id="dTrace"></div></div>
+  <div class="note" id="dNext">—</div>
+  <a class="go" id="dGo" href="#">Detay paneline git →</a>
+</aside>
+
+<script>
+(function(){
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
+const fmt = (v,d=1) => (v==null || !isFinite(v)) ? '—' : v.toLocaleString('tr-TR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const p2 = n => String(n).padStart(2,'0');
+const dur = h => { const m = Math.max(0, Math.round(h*60)), d = Math.floor(m/1440), hh = Math.floor(m%1440/60), mm = m%60; return d ? `${d} g ${hh} sa` : hh ? `${hh} sa ${p2(mm)} dk` : `${mm} dk`; };
+const hash = (...a) => { let h = 2166136261; for (const c of a.join('|')) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return ((h >>> 0) % 100000) / 100000; };
+const wob = (t, s) => 0.5*Math.sin(t*0.7 + s) + 0.3*Math.sin(t*1.9 + s*2.3);   // smooth pseudo-noise
+
+/* ---------- plant and schedule (örnek planlama) ---------- */
+// A new batch starts in a bunker every 72 h, moves to a tunnel after Faz 1 and to a room after Faz 2.
+const STEP = 72;
+// Equipment still to be confirmed by MAKOM; the tunnel fan is the user's own figure.
+const SPEC = { bunkerKw:7.5, tunnelKw:30, roomKw:15 };
+const KINDS = {
+  b: { n:3,  label:i => `B${i+1}`, name:i => `Bunker ${i+1}`, kind:'FAZ 1 · BUNKER', off:0,   period:216, href:i => `bunker.html#b${i+1}`,
+       stages:[ {n:'Dolum',s:'DOL',d:24,c:'#60a5fa',op:true}, {n:'Fermentasyon 1',s:'F1',d:56,c:'#fbbf24'}, {n:'Fermentasyon 2',s:'F2',d:60,c:'#fb923c'}, {n:'Fermentasyon 3',s:'F3',d:72,c:'#f87171'}, {n:'Boşaltma',s:'BOŞ',d:4,c:'#94a3b8',op:true} ] },
+  t: { n:4,  label:i => `T${i+1}`, name:i => `Tünel ${i+1}`, kind:'FAZ 2 · TÜNEL', off:216, period:288, href:i => `tunel.html#t${i+1}`,
+       stages:[ {n:'Yükleme',s:'YÜK',d:4,c:'#94a3b8',op:true}, {n:'Leveling',s:'LEV',d:10,c:'#38bdf8'}, {n:'Warm up',s:'WRM',d:7.5,c:'#fb923c'}, {n:'Pastörizasyon',s:'PAS',d:9,c:'#f43f5e'}, {n:'Cool down',s:'CD',d:7.5,c:'#a78bfa'}, {n:'Conditioning',s:'CON',d:72,c:'#34d399'}, {n:'Son soğutma',s:'SS',d:8,c:'#22d3ee'}, {n:'Boşaltma',s:'BOŞ',d:2,c:'#94a3b8',op:true} ] },
+  r: { n:20, label:i => p2(i+1), name:i => `Oda ${p2(i+1)}`, kind:'ÜRETİM · ODA', off:336, period:1440, href:i => `oda.html#oda${p2(i+1)}`,
+       stages:[ {n:'Kuluçka',s:'KUL',d:360,c:'#c08a4a'}, {n:'Örtü toprağı',s:'ÖRT',d:192,c:'#a8a29e'}, {n:'Raking',s:'RAK',d:24,c:'#e7e5e4'}, {n:'Pinning',s:'PİN',d:240,c:'#60a5fa'}, {n:'1. Flaş',s:'FL1',d:144,c:'#34d399'}, {n:'Ara',s:'ARA',d:96,c:'#64748b'}, {n:'2. Flaş',s:'FL2',d:144,c:'#10b981'}, {n:'Boşaltma',s:'BOŞ',d:48,c:'#f97316',op:true} ] },
+};
+for (const K of Object.values(KINDS)){ let a = 0; K.stages.forEach(s => { s.a = a; a += s.d; }); K.busy = a; }
+const IDLE = {n:'Temizlik / hazır', s:'HAZ', c:'#334155'};
+const UNITS = [];
+['b','t','r'].forEach(k => { for (let i=0;i<KINDS[k].n;i++) UNITS.push({k, i, id:k+i}); });
+
+// Which batch a unit holds at sim hour t, and where in the recipe it is.
+function phase(k, i, t){
+  const K = KINDS[k], base = i*STEP + K.off, m = Math.floor((t - base)/K.period), start = base + m*K.period, local = t - start;
+  const batch = m*K.n + i;
+  if (local >= K.busy) return {K, k, i, batch, idle:true, st:IDLE, si:-1, local, sStart:start + K.busy, sEnd:start + K.period, start, ls:local - K.busy};
+  let si = K.stages.findIndex(s => local < s.a + s.d);
+  const st = K.stages[si];
+  return {K, k, i, batch, idle:false, st, si, local, sStart:start + st.a, sEnd:start + st.a + st.d, start, ls:local - st.a};
+}
+
+/* ---------- process values from the schedule ---------- */
+function bunkerVals(p, t){
+  const sp = [null,72,76,74][p.si];
+  let T;
+  if (p.si === 0) T = 45 + 11*(1 - Math.exp(-p.ls/8));
+  else if (p.si >= 1 && p.si <= 3){ const prev = p.si === 1 ? 55 : [null,72,76,74][p.si-1]; T = sp + (prev - sp)*Math.exp(-p.ls/6); }
+  else T = 74 - 3*p.ls;
+  const cyc = Math.floor(t*2), cm = (t*60) % 30, h = hash('bc', p.i, cyc);
+  const run = h < .02 ? 7 : h < .09 ? 6 : 5;
+  const fan = p.si === 0 ? true : p.si === 4 ? false : cm < run;
+  if (p.si >= 1 && p.si <= 3) T += (fan ? -0.6*cm/run : -0.6 + 1.2*(cm-run)/(30-run)) + 0.8*wob(t/3, p.i);
+  const o2 = fan ? 18 : 18 - 8*(cm - run)/(30 - run);
+  return { T, fan, kw: fan ? SPEC.bunkerKw : 0, avgKw: p.si === 0 ? SPEC.bunkerKw : p.si === 4 ? 0 : SPEC.bunkerKw*5.3/30, o2, run, left: fan ? run - cm : 30 - cm };
+}
+const TFAN = [30,55,50,58,68,55,85,0];
+function tunnelVals(p, t){
+  if (p.idle) return { T:null, fan:false, kw:0, avgKw:0, f:0 };
+  const L = p.ls; let T;
+  switch (p.si){
+    case 0: T = 52; break; case 1: T = 48.5; break;
+    case 2: T = Math.min(58.5, 48.5 + 1.4*L); break; case 3: T = 58.6; break;
+    case 4: T = Math.max(49.3, 58.5 - 1.25*L); break; case 5: T = 49.3; break;
+    case 6: T = Math.max(25, 49.3 - 3*L); break; default: T = 25;
+  }
+  T += 0.25*wob(t, p.i + 3);
+  const f = TFAN[p.si]/100;
+  return { T, fan: f > 0, kw: SPEC.tunnelKw*f**3, avgKw: SPEC.tunnelKw*f**3, f };
+}
+const RT = [22.5,22,22,16.5,17,17.5,17,null], RC = [6000,4000,3500,900,900,1200,900,600], RH = [95,95,95,91,87,91,87,55], RF = [40,45,45,65,70,55,70,80];
+function roomVals(p, t){
+  if (p.idle) return { T:null, co2:420, rh:null, fan:false, kw:0, avgKw:0, f:0 };
+  const L = p.ls; let T = RT[p.si], co2 = RC[p.si];
+  if (p.si === 3){ T = 22 - 5.5*Math.min(L/48, 1); co2 = 4000 - 3100*Math.min(L/48, 1); }
+  if (p.si === 7) T = L < 6 ? 20 + 50*L/6 : L < 18 ? 70 : Math.max(25, 70 - 4*(L - 18));
+  T += 0.25*wob(t, p.i); co2 += 120*wob(t*2, p.i + 9);
+  const f = RF[p.si]/100;
+  return { T, co2, rh: RH[p.si] + wob(t, p.i + 4), fan:true, kw: SPEC.roomKw*f**3, avgKw: SPEC.roomKw*f**3, f, day: Math.floor(p.local/24) + 1 };
+}
+function vals(u, t){ const p = phase(u.k, u.i, t); return { p, v: u.k === 'b' ? bunkerVals(p, t) : u.k === 't' ? tunnelVals(p, t) : roomVals(p, t) }; }
+
+/* ---------- alarms: deterministic events per unit and 8-hour window ---------- */
+const ATYPES = {
+  b:[['T_COMP sapması','Prob ortalamadan hariç tutuldu'],['O₂ düşük','Çalışma süresi 6–7 dk’ya uzatıldı'],['7 dk sınırında yükseliş','Yönetici müdahalesi istendi']],
+  t:[['Inlet bant dışı','Damper oranı düzeltiliyor'],['Prob sapması','Ortalamadan hariç tutuldu'],['Hava girişi basıncı yüksek','Spigot hattı kontrol edilmeli']],
+  r:[['CO₂ yüksek','Taze hava payı artırıldı'],['Bağıl nem düşük','Nemlendirme artırıldı'],['Oda sıcaklığı sapması','Soğutma vanası ayarlanıyor']],
+};
+const acked = new Set();
+function alarmsAt(t){
+  const out = [], w = Math.floor(t/8);
+  UNITS.forEach(u => {
+    for (let b = w - 1; b <= w; b++){
+      const h = hash('al', u.id, b), p = phase(u.k, u.i, b*8);
+      if (p.idle || h > (u.k === 'r' ? .05 : .09)) continue;
+      const start = b*8 + 1 + 4*hash('st', u.id, b), len = 1 + 3*hash('ln', u.id, b);
+      if (t < start || t > start + len) continue;
+      const ty = ATYPES[u.k][Math.floor(hash('ty', u.id, b)*3)], crit = h < .015;
+      out.push({ id:`${u.id}-${b}`, u, sev: crit ? 'crit' : 'warn', msg: ty[0], resp: ty[1], since: start });
+    }
+  });
+  return out.sort((a,c) => (a.sev === c.sev ? c.since - a.since : a.sev === 'crit' ? -1 : 1));
+}
+
+/* ---------- time ---------- */
+const T0 = 3000, startMs = Date.now();
+let simT = T0, speed = 60, selected = null;
+const dateOf = h => new Date(startMs + (h - T0)*3600e3);
+const dayStart = t => { const d = dateOf(t); d.setHours(0,0,0,0); return T0 + (d.getTime() - startMs)/3600e3; };
+
+/* ---------- site maps ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+function buildYard(){
+  const X = m => 20 + 8*m, Y = m => 20 + 8*m;
+  let g = `<defs><pattern id="soil" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="var(--soil)"/><circle cx="3" cy="3" r="1.4" fill="#5a3418"/><circle cx="8" cy="7" r="1.1" fill="#9a6a3c"/></pattern></defs>
+    <rect x="20" y="20" width="560" height="400" rx="6" fill="var(--bg-2)" stroke="var(--line)" stroke-width="1.5"/>
+    <text x="${X(27)}" y="${Y(14)}" fill="var(--muted)" font-size="14" font-weight="600">A1 · açık çalışma sahası</text>
+    <rect x="${X(43.5)}" y="${Y(1)}" width="58" height="44" rx="4" fill="var(--panel-2)" stroke="var(--line)"/><text x="${X(43.5)+29}" y="${Y(1)+26}" text-anchor="middle" font-size="10.5" fill="var(--ink-2)">Bandırma</text>
+    <rect x="${X(52.7)}" y="${Y(1)}" width="58" height="44" rx="4" fill="var(--panel-2)" stroke="var(--line)"/><text x="${X(52.7)+29}" y="${Y(1)+26}" text-anchor="middle" font-size="10.5" fill="var(--ink-2)">Topraklama</text>
+    <rect x="${X(3)}" y="${Y(29)}" width="96" height="56" rx="4" fill="none" stroke="#c9a85a" stroke-dasharray="4 4"/><text x="${X(3)+48}" y="${Y(29)+32}" text-anchor="middle" font-size="11" fill="var(--ink-2)">Sap stoku</text>
+    <rect x="${X(39)}" y="${Y(28)}" width="88" height="158" rx="4" fill="var(--panel-2)" stroke="var(--line)"/><text x="${X(39)+44}" y="${Y(28)+80}" text-anchor="middle" font-size="11" fill="var(--ink-2)">Yükleme</text><text x="${X(39)+44}" y="${Y(28)+94}" text-anchor="middle" font-size="11" fill="var(--ink-2)">holü</text>
+    <rect x="${X(51.5)}" y="${Y(46.6)}" width="78" height="20" rx="3" fill="var(--panel-2)" stroke="var(--line)"/><text x="${X(51.5)+39}" y="${Y(46.6)+14}" text-anchor="middle" font-size="10" fill="var(--ink-2)">Sistem kontrol</text>
+    <path class="flowline" d="M176,120 C 260,120 300,200 ${X(39)+44},${Y(28)}"/>
+    <path class="flowline" d="M${X(39)+88},${Y(28)+60} L ${X(50)},${Y(28)+60}"/>
+    <rect x="${X(65.4)}" y="246" width="22" height="134" rx="3" fill="var(--panel-2)" stroke="var(--line)" stroke-dasharray="3 3"/><text x="${X(65.4)+11}" y="313" text-anchor="middle" font-size="9" fill="var(--muted)" transform="rotate(-90 ${X(65.4)+11} 313)">FAN / DAMPER</text>`;
+  for (let i=0;i<3;i++){
+    const y = 24 + i*60;
+    g += `<g class="u" data-u="b${i}" tabindex="0" role="button" aria-label="Bunker ${i+1}">
+      <rect class="shape" x="28" y="${y}" width="148" height="56" rx="4" fill="url(#soil)" stroke="var(--line)" stroke-width="1.5"/>
+      <rect id="yb${i}" x="28" y="${y}" width="148" height="56" rx="4" fill="#000" opacity=".25" pointer-events="none"/>
+      <rect id="ybs${i}" x="28" y="${y+50}" width="148" height="6" rx="2" fill="#fff"/>
+      <text x="38" y="${y+24}" font-size="20" font-weight="800" fill="#fff" font-family="Barlow Condensed">B${i+1}</text>
+      <text id="ybt${i}" x="38" y="${y+42}" font-size="12.5" font-weight="600" fill="#fff">—</text>
+      <text id="ybx${i}" x="168" y="${y+24}" font-size="13" font-weight="700" fill="#fff" text-anchor="end" font-family="IBM Plex Mono">—</text>
+      <circle cx="160" cy="${y+38}" r="4" fill="var(--ok)" id="ybf${i}"/><circle class="ring" cx="160" cy="${y+38}" r="4"/>
+    </g>`;
+  }
+  for (let i=0;i<4;i++){
+    const y = 348 - i*34;
+    g += `<g class="u" data-u="t${i}" tabindex="0" role="button" aria-label="Tünel ${i+1}">
+      <rect class="shape" id="yt${i}" x="${X(50.2)}" y="${y}" width="120" height="30" rx="3" fill="#334155" stroke="var(--line)" stroke-width="1.5"/>
+      <text x="${X(50.2)+8}" y="${y+20}" font-size="15" font-weight="800" fill="#fff" font-family="Barlow Condensed">T${i+1}</text>
+      <text id="ytt${i}" x="${X(50.2)+112}" y="${y+19}" font-size="11.5" font-weight="700" fill="#fff" text-anchor="end" font-family="IBM Plex Mono">—</text>
+      <circle cx="${X(65.4)+11}" cy="${y+15}" r="4" fill="var(--ok)" id="ytf${i}"/><circle class="ring" cx="${X(65.4)+11}" cy="${y+15}" r="4"/>
+    </g>`;
+  }
+  $('yard').innerHTML = g;
+}
+function buildFarm(){
+  const s = 7.6, x0 = 26, y0 = 34, W = 7*s, Hh = 18*s, C = 5*s;
+  let g = `<rect x="${x0-6}" y="${y0-6}" width="${10*W+12}" height="${2*Hh+C+12}" rx="6" fill="var(--bg-2)" stroke="var(--line)" stroke-width="1.5"/>
+    <rect x="${x0}" y="${y0+Hh}" width="${10*W}" height="${C}" fill="var(--panel-2)"/>
+    <text x="${x0+5*W}" y="${y0+Hh+C/2+5}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--muted)" letter-spacing="2">5,00 m ANA KORİDOR</text>
+    <text x="${x0}" y="22" font-size="11" fill="var(--muted)" font-family="IBM Plex Mono">70,88 m</text>`;
+  for (let i=0;i<20;i++){
+    const col = i % 10, top = i < 10, x = x0 + col*W, y = top ? y0 : y0 + Hh + C;
+    g += `<g class="u" data-u="r${i}" tabindex="0" role="button" aria-label="Oda ${p2(i+1)}">
+      <rect class="shape" id="fr${i}" x="${x+1.5}" y="${y+1.5}" width="${W-3}" height="${Hh-3}" rx="3" fill="#334155" stroke="var(--line)" stroke-width="1.5"/>
+      <rect id="frp${i}" x="${x+4}" y="${top ? y+Hh-12 : y+6}" width="0" height="5" rx="2" fill="#fff" opacity=".85"/>
+      <text x="${x+W/2}" y="${y+28}" text-anchor="middle" font-size="18" font-weight="800" fill="#fff" font-family="Barlow Condensed">${p2(i+1)}</text>
+      <text id="frs${i}" x="${x+W/2}" y="${y+50}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff" font-family="IBM Plex Mono">—</text>
+      <text id="frt${i}" x="${x+W/2}" y="${y+76}" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff">—</text>
+      <text class="fine" id="frc${i}" x="${x+W/2}" y="${y+94}" text-anchor="middle" font-size="10.5" fill="#fff" opacity=".85" font-family="IBM Plex Mono">—</text>
+      <text class="fine" id="frd${i}" x="${x+W/2}" y="${y+112}" text-anchor="middle" font-size="10.5" fill="#fff" opacity=".85" font-family="IBM Plex Mono">—</text>
+    </g>`;
+  }
+  $('farm').innerHTML = g;
+}
+function legend(id, list){ $(id).innerHTML = list.map(s => `<span><i style="background:${s.c}"></i>${s.n}</span>`).join(''); }
+
+/* ---------- render ---------- */
+function setT(id, t){ const el = $(id); if (el) el.textContent = t; }
+function powerAt(t, avg){
+  let b = 0, tu = 0, r = 0;
+  UNITS.forEach(u => { const {v} = vals(u, t), w = avg ? v.avgKw : v.kw; if (u.k === 'b') b += w; else if (u.k === 't') tu += w; else r += w; });
+  return {b, t:tu, r, sum:b+tu+r};
+}
+function energySince(t0, t1){ const e = {b:0, t:0, r:0}; for (let t = t0; t < t1; t += .25){ const p = powerAt(t, true), dt = Math.min(.25, t1 - t); e.b += p.b*dt; e.t += p.t*dt; e.r += p.r*dt; } return e; }
+
+function renderMaps(t){
+  for (let i=0;i<3;i++){
+    const {p, v} = vals({k:'b', i}, t);
+    $('yb'+i).setAttribute('fill', p.st.c); $('yb'+i).setAttribute('opacity', '.38');
+    $('ybs'+i).setAttribute('width', (148*clamp(p.local/KINDS.b.busy, 0, 1)).toFixed(1)); $('ybs'+i).setAttribute('fill', p.st.c);
+    setT('ybt'+i, `${p.st.s} · ${dur(p.sEnd - t)} kaldı`); setT('ybx'+i, `${fmt(v.T)}°`);
+    $('ybf'+i).setAttribute('fill', v.fan ? 'var(--ok)' : 'var(--muted)');
+    document.querySelector(`[data-u="b${i}"]`).classList.toggle('fan', !!v.fan);
+  }
+  for (let i=0;i<4;i++){
+    const {p, v} = vals({k:'t', i}, t);
+    $('yt'+i).setAttribute('fill', p.st.c);
+    setT('ytt'+i, p.idle ? 'HAZIR' : `${p.st.s} ${fmt(v.T)}°`);
+    $('ytf'+i).setAttribute('fill', v.fan ? 'var(--ok)' : 'var(--muted)');
+    document.querySelector(`[data-u="t${i}"]`).classList.toggle('fan', !!v.fan);
+  }
+  for (let i=0;i<20;i++){
+    const {p, v} = vals({k:'r', i}, t);
+    $('fr'+i).setAttribute('fill', p.st.c);
+    setT('frs'+i, p.st.s); setT('frt'+i, p.idle ? '—' : `${fmt(v.T)} °C`);
+    setT('frc'+i, p.idle ? '' : `${fmt(v.co2,0)} ppm`); setT('frd'+i, p.idle ? dur(p.sEnd - t) : `gün ${v.day}`);
+    $('frp'+i).setAttribute('width', (7*7.6 - 8)*clamp(p.local/KINDS.r.busy, 0, 1));
+  }
+  document.querySelectorAll('.u').forEach(el => el.classList.toggle('sel', el.dataset.u === selected));
+}
+
+function renderKpis(t, al){
+  const busy = UNITS.filter(u => !phase(u.k, u.i, t).idle).length;
+  const pw = powerAt(t, false), pa = powerAt(t, true);
+  const today = energySince(dayStart(t), t), eSum = today.b + today.t + today.r;
+  const crit = al.filter(a => a.sev === 'crit' && !acked.has(a.id)).length, open = al.filter(a => !acked.has(a.id)).length;
+  const q = queue(t), nextOp = q.find(e => e.op);
+  const out = 13 + 6*Math.sin(2*Math.PI*((dateOf(t).getHours() + dateOf(t).getMinutes()/60) - 9)/24);
+  const hist = Array.from({length:48}, (_,k) => powerAt(t - 24 + k/2, true).sum), mx = Math.max(...hist), mn = Math.min(...hist);
+  const spark = `<svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none"><path d="M0,30 ${hist.map((h,k) => `L${(k/47*100).toFixed(1)},${(28 - (h - mn)/(mx - mn || 1)*24).toFixed(1)}`).join(' ')} L100,30Z" fill="var(--accent)" opacity=".25"/></svg>`;
+  const kinds = ['b','t','r'].map(k => ({k, n:KINDS[k].n, busy:UNITS.filter(u => u.k === k && !phase(u.k, u.i, t).idle).length}));
+  $('kpis').innerHTML = `
+    <div class="card kpi ok"><span class="l">Aktif ünite</span><span class="v num">${busy}<small>/ ${UNITS.length}</small></span><span class="s">${kinds.map(x => `${x.busy}/${x.n} ${{b:'bunker',t:'tünel',r:'oda'}[x.k]}`).join(' · ')}</span>
+      <div class="bar">${kinds.map(x => `<i style="width:${x.busy/UNITS.length*100}%;background:${{b:'#fbbf24',t:'#f43f5e',r:'#34d399'}[x.k]}"></i>`).join('')}</div></div>
+    <div class="card kpi"><span class="l">Anlık fan gücü</span><span class="v num">${fmt(pw.sum,0)}<small>kW</small></span><span class="s">15 dk ort. ${fmt(pa.sum,0)} kW · bunker ${fmt(pw.b,1)} · tünel ${fmt(pw.t,1)} · oda ${fmt(pw.r,1)}</span>${spark}</div>
+    <div class="card kpi"><span class="l">Bugün enerji</span><span class="v num">${fmt(eSum,0)}<small>kWh</small></span><span class="s">00:00’dan beri · fan tüketimi</span></div>
+    <div class="card kpi ${crit ? 'crit' : open ? 'warn' : 'ok'}"><span class="l">Açık alarm</span><span class="v num">${open}<small>${crit ? `${crit} kritik` : 'uyarı'}</small></span><span class="s">${al.length - open} onaylandı · ${al.length ? 'en yeni ' + al[0].u.id.toUpperCase().replace('R','ODA ') : 'tesis normal'}</span></div>
+    <div class="card kpi"><span class="l">Sıradaki operatör işi</span><span class="v num">${nextOp ? dur(nextOp.at - t) : '—'}</span><span class="s">${nextOp ? `${nextOp.unit} · ${nextOp.text}` : '48 saatte manuel iş yok'}</span></div>
+    <div class="card kpi"><span class="l">Dış hava</span><span class="v num">${fmt(out,1)}<small>°C</small></span><span class="s">Tünel son soğutması ve oda taze havası için</span></div>`;
+  setT('bellN', String(open)); $('bellBtn').className = 'ibtn bell' + (crit ? ' on' : open ? ' warn' : '');
+  const inRooms = UNITS.filter(u => u.k === 'r' && !phase('r', u.i, t).idle).length;
+  const fl = UNITS.filter(u => u.k === 'r' && /Flaş/.test(phase('r', u.i, t).st.n)).length;
+  $('summary').innerHTML = `<b>${busy}</b> ünite çalışıyor · <b>${inRooms}</b> odada ürün, <b>${fl}</b> odada hasat · anlık fan gücü <b>${fmt(pw.sum,0)} kW</b> · ${open ? `<b style="color:var(--${crit ? 'crit' : 'warn'})">${open} açık alarm</b>` : 'alarm yok'}`;
+}
+
+function queue(t){
+  const ev = [];
+  UNITS.forEach(u => {
+    let tt = t;
+    for (let n=0;n<6;n++){
+      const p = phase(u.k, u.i, tt + 1e-6), at = p.sEnd;
+      if (at > t + 48) break;
+      const nx = phase(u.k, u.i, at + 1e-6);
+      const op = !!(nx.st.op || p.st.op);
+      ev.push({ u, at, unit: KINDS[u.k].name(u.i), from: p.st, to: nx.st, op,
+        text: nx.st.op ? `${nx.st.n} başlıyor` : p.st.op ? `${p.st.n} bitiyor → ${nx.st.n}` : `${p.st.n} → ${nx.st.n}` });
+      tt = at;
+    }
+  });
+  return ev.sort((a,c) => a.at - c.at);
+}
+function renderQueue(t){
+  const q = queue(t).slice(0, 7);
+  setHTML($('queue'), q.map(e => `<li><button type="button" class="ev" data-u="${e.u.id}">
+      <i class="sw" style="background:linear-gradient(${e.from.c},${e.to.c})"></i>
+      <b>${e.unit}${e.op ? '<span class="tag">OPERATÖR</span>' : ''}</b>
+      <span class="when mono">${dur(e.at - t)}<small>${dateOf(e.at).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}</small></span>
+      <span>${e.text}</span></button></li>`).join(''));
+}
+function renderAlarms(al, t, force){
+  setHTML($('alarms'), al.length ? al.slice(0, 7).map(a => `<li class="al ${a.sev}${acked.has(a.id) ? ' ack' : ''}">
+      <i class="sev">${a.sev === 'crit' ? 'KRİTİK' : 'UYARI'}</i>
+      <b data-u="${a.u.id}">${KINDS[a.u.k].name(a.u.i)} · ${a.msg}</b>
+      ${acked.has(a.id) ? '<span style="grid-row:span 2;font-size:12px;color:var(--muted)">onaylandı</span>' : `<button type="button" data-ack="${a.id}">Onayla</button>`}
+      <span>${a.resp} · ${dur(t - a.since)} önce</span></li>`).join('')
+    : `<li class="empty">Tesiste açık alarm yok.</li>`, force);
+  setT('alSub', `${al.length} aktif · tüm tesis`);
+}
+
+// Built once; chips are moved in place so a tap never lands on an element that was just replaced.
+const LANES = { b:{title:'Faz 1 · Bunker', span:'9 gün · 3 bunker', days:9, h:62}, t:{title:'Faz 2 · Tünel', span:'5 gün · 4 tünel', days:5, h:62}, r:{title:'Üretim · Oda', span:'52 gün · 20 oda', days:52, h:128} };
+function buildLanes(){
+  const lane = k => {
+    const K = KINDS[k], L = LANES[k], total = K.busy;
+    const bg = K.stages.map(s => `<span class="seg-bg" style="left:${s.a/total*100}%;width:${s.d/total*100}%;background:${s.c}"></span>${s.d/total > .07 ? `<span class="sl" style="left:${s.a/total*100}%;width:${s.d/total*100}%">${s.s}</span>` : ''}`).join('');
+    const ticks = Array.from({length:L.days+1}, (_,d) => d % (L.days > 20 ? 7 : 1) === 0 || d === L.days ? `<span class="tick" style="left:${clamp(d*24/total*100, 1.5, 98.5)}%">${d}g</span>` : '').join('');
+    const chips = UNITS.filter(u => u.k === k).map(u => `<button type="button" class="chipu" id="ch-${u.id}" data-u="${u.id}">${K.label(u.i)}</button>`).join('');
+    return `<div class="lane"><div class="lh"><b>${L.title}</b><span id="ln-${k}">${L.span}</span></div><div class="track" style="--h:${L.h}px">${bg}${ticks}${chips}</div></div>`;
+  };
+  $('lanes').innerHTML = lane('b') + `<div class="arrowdown">↓ tünele aktarım</div>` + lane('t') + `<div class="arrowdown">↓ odalara dolum</div>` + lane('r');
+}
+function renderLanes(t){
+  ['b','t','r'].forEach(k => {
+    const K = KINDS[k], L = LANES[k], units = UNITS.filter(u => u.k === k), lanes = k === 'r' ? 4 : 1;
+    let idle = 0;
+    units.forEach((u, n) => {
+      const p = phase(u.k, u.i, t), el = $('ch-'+u.id);
+      // idle units wait side by side at the end of the track
+      const x = p.idle ? 97 - 6*idle : p.local/K.busy*100;
+      if (p.idle) idle++;
+      el.style.left = clamp(x, 3, 97) + '%';
+      el.style.zIndex = p.idle ? 0 : 1;
+      el.style.top = (lanes > 1 ? 30 + (n % lanes)*((L.h - 44)/(lanes - 1)) - 4 : L.h/2 + 4) + 'px';
+      el.style.background = p.st.c;
+      el.classList.toggle('idle', !!p.idle);
+      el.title = `${K.name(u.i)} · ${p.idle ? IDLE.n : p.st.n}`;
+    });
+    setT('ln-'+k, L.span + (idle ? ` · ${idle} hazır` : ''));
+  });
+}
+// Lists are rebuilt only when their content changes and never under the pointer.
+function setHTML(el, html, force){ if (el._html === html || (!force && el.matches(':hover'))) return; el._html = html; el.innerHTML = html; }
+
+function renderGantt(t, force){
+  const wrap = $('gantt').parentElement, W = Math.max(860, wrap.clientWidth - 12), LAB = 78, t0 = t - 48, t1 = t + 14*24, x = h => LAB + (h - t0)/(t1 - t0)*(W - LAB - 8);
+  const RH = 19, GH = 24; let y = 26, g = '';
+  const d0 = dayStart(t0);
+  for (let d = d0; d <= t1; d += 24){
+    if (d < t0) continue;
+    const dt = dateOf(d);
+    g += `<line x1="${x(d)}" y1="18" x2="${x(d)}" y2="100%" stroke="var(--line-2)"/><text x="${x(d)+3}" y="13" font-size="10.5" fill="var(--muted)" font-family="IBM Plex Mono">${p2(dt.getDate())}.${p2(dt.getMonth()+1)}</text>`;
+  }
+  [['b','FAZ 1 · BUNKER'],['t','FAZ 2 · TÜNEL'],['r','ÜRETİM · ODALAR']].forEach(([k, title]) => {
+    g += `<text x="6" y="${y+16}" font-size="12" font-weight="700" fill="var(--accent)" letter-spacing="1.5" font-family="IBM Plex Mono">${title}</text>`; y += GH;
+    UNITS.filter(u => u.k === k).forEach(u => {
+      const K = KINDS[k];
+      g += `<g class="g-row" data-u="${u.id}"><rect x="0" y="${y-1}" width="${W}" height="${RH}" fill="transparent"/>
+        <text class="g-lab" x="8" y="${y+13}" font-size="12.5" font-weight="700" fill="var(--ink-2)">${K.name(u.i)}</text>`;
+      const base = u.i*STEP + K.off, m0 = Math.floor((t0 - base)/K.period) - 1, m1 = Math.floor((t1 - base)/K.period) + 1;
+      for (let m = m0; m <= m1; m++){
+        const st = base + m*K.period;
+        [...K.stages.map(s => ({s, a:st + s.a, b:st + s.a + s.d})), {s:IDLE, a:st + K.busy, b:st + K.period}].forEach(seg => {
+          const a = Math.max(seg.a, t0), b = Math.min(seg.b, t1); if (b <= a) return;
+          const w = x(b) - x(a);
+          g += `<rect x="${x(a)+.5}" y="${y+1}" width="${Math.max(0, w-1)}" height="${RH-4}" rx="3" fill="${seg.s.c}" opacity="${seg.s === IDLE ? .35 : .9}"><title>${K.name(u.i)} · ${seg.s.n}</title></rect>`;
+          if (w > 34 && seg.s !== IDLE) g += `<text x="${x(a)+4}" y="${y+12}" font-size="10" font-weight="700" fill="#04101f" font-family="IBM Plex Mono" pointer-events="none">${seg.s.s}</text>`;
+        });
+      }
+      g += `</g>`; y += RH;
+    });
+    y += 6;
+  });
+  g += `<line x1="${x(t)}" y1="16" x2="${x(t)}" y2="${y}" stroke="var(--crit)" stroke-width="2"/><rect x="${x(t)-22}" y="${y-2}" width="44" height="16" rx="3" fill="var(--crit)"/><text x="${x(t)}" y="${y+10}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff" font-family="IBM Plex Mono">ŞİMDİ</text>`;
+  const svg = $('gantt'); if (svg.matches(':hover') && !force) return; svg.setAttribute('width', W); svg.setAttribute('height', y + 18); svg.setAttribute('viewBox', `0 0 ${W} ${y + 18}`); svg.innerHTML = g;
+}
+
+function renderEnergy(t){
+  const N = 192, pts = Array.from({length:N+1}, (_,k) => { const h = t - 48 + k/4; return {h, ...powerAt(h, true)}; });
+  const max = Math.max(...pts.map(p => p.sum))*1.15 || 1, W = 900, Hh = 260, L = 46, R = 10, T = 14, B = 30;
+  const X = k => L + k/N*(W - L - R), Y = v => T + (1 - v/max)*(Hh - T - B);
+  const layer = (lo, hi, color) => `<path d="M${pts.map((p,k) => `${X(k).toFixed(1)},${Y(hi(p)).toFixed(1)}`).join(' L')} L${pts.map((p,k) => `${X(N-k).toFixed(1)},${Y(lo(pts[N-k])).toFixed(1)}`).join(' L')}Z" fill="${color}" opacity=".85"/>`;
+  let g = '';
+  const step = max > 120 ? 40 : max > 60 ? 20 : 10;
+  for (let v = 0; v <= max; v += step) g += `<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line-2)"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="IBM Plex Mono">${v}</text>`;
+  g += layer(p => 0, p => p.r, '#34d399') + layer(p => p.r, p => p.r + p.t, '#f43f5e') + layer(p => p.r + p.t, p => p.sum, '#fbbf24');
+  for (let k = 0; k <= N; k += 24){ const d = dateOf(pts[k].h); g += `<text x="${X(k)}" y="${Hh-10}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="IBM Plex Mono">${p2(d.getHours())}:00</text>`; }
+  const last = pts[N];
+  g += `<circle cx="${X(N)}" cy="${Y(last.sum)}" r="5" fill="var(--ink)" stroke="var(--panel)" stroke-width="2"/>`;
+  g += `<g font-size="12" font-family="Barlow Semi Condensed" font-weight="600"><rect x="${L+8}" y="${T+2}" width="10" height="10" fill="#fbbf24"/><text x="${L+22}" y="${T+11}" fill="var(--ink-2)">Faz 1 bunker</text><rect x="${L+112}" y="${T+2}" width="10" height="10" fill="#f43f5e"/><text x="${L+126}" y="${T+11}" fill="var(--ink-2)">Faz 2 tünel</text><rect x="${L+206}" y="${T+2}" width="10" height="10" fill="#34d399"/><text x="${L+220}" y="${T+11}" fill="var(--ink-2)">Üretim odaları</text></g>`;
+  $('energy').innerHTML = g;
+  const e48 = pts.reduce((s,p) => s + p.sum*.25, 0) - pts[0].sum*.25;
+  setT('eAside', `48 saat: ${fmt(e48,0)} kWh`);
+  const today = energySince(dayStart(t), t), tot = today.b + today.t + today.r || 1;
+  $('split').innerHTML = [['Faz 1 bunker', today.b, '#fbbf24'], ['Faz 2 tünel', today.t, '#f43f5e'], ['Üretim odaları', today.r, '#34d399']].map(([n, v, c]) =>
+    `<div class="row"><span>${n}</span><span class="b"><i style="width:${v/tot*100}%;background:${c}"></i></span><b class="num">${fmt(v,0)} kWh</b></div>`).join('')
+    + `<div class="row" style="border-top:1px solid var(--line);padding-top:10px"><span><b style="font-size:15px">Toplam</b></span><span class="note">bugün 00:00’dan beri</span><b class="num">${fmt(tot,0)} kWh</b></div>`;
+}
+
+/* ---------- drawer ---------- */
+function openUnit(id){
+  selected = id; renderDrawer(simT);
+  $('drawer').classList.add('on'); $('scrim').classList.add('on'); $('drawer').setAttribute('aria-hidden','false');
+  $('dClose').focus(); renderMaps(simT);
+}
+function closeUnit(){ selected = null; $('drawer').classList.remove('on'); $('scrim').classList.remove('on'); $('drawer').setAttribute('aria-hidden','true'); renderMaps(simT); }
+function renderDrawer(t){
+  if (!selected) return;
+  const u = UNITS.find(x => x.id === selected), K = KINDS[u.k], {p, v} = vals(u, t);
+  setT('dKind', K.kind); setT('dName', K.name(u.i));
+  $('dStage').querySelector('i').style.background = p.st.c; $('dStage').querySelector('span').textContent = p.idle ? IDLE.n : `${p.si+1}. ${p.st.n}`;
+  setT('dProgL', p.idle ? 'Sonraki parti' : `Parti ${p2(p.batch % 1000)} · etap ilerlemesi`);
+  setT('dProgR', `${dur(p.ls)} / ${dur(p.sEnd - p.sStart)}`);
+  $('dProg').style.width = clamp(p.ls/(p.sEnd - p.sStart)*100, 0, 100) + '%'; $('dProg').style.background = p.st.c;
+  const cells = u.k === 'b' ? [['Ort. sıcaklık', fmt(v.T), '°C'], ['Fan', v.fan ? `ÇALIŞIYOR` : 'BEKLEMEDE', ''], ['O₂', fmt(v.o2), '%'], [v.fan ? 'Kalan çalışma' : 'Sonraki çalışma', dur(v.left/60), '']]
+    : u.k === 't' ? [['Kompost', p.idle ? '—' : fmt(v.T), '°C'], ['Fan', fmt(v.f*100,0), '%'], ['Fan gücü', fmt(v.kw,1), 'kW'], ['Etap sonu', dur(p.sEnd - t), '']]
+    : [['Oda sıcaklığı', p.idle ? '—' : fmt(v.T), '°C'], ['CO₂', p.idle ? '—' : fmt(v.co2,0), 'ppm'], ['Bağıl nem', p.idle ? '—' : fmt(v.rh,0), '%'], ['Döngü günü', p.idle ? '—' : `${v.day} / 52`, '']];
+  $('dGrid').innerHTML = cells.map(([l, val, un]) => `<div class="dm"><span>${l}</span><b class="num">${val} <small>${un}</small></b></div>`).join('');
+  const hs = Array.from({length:97}, (_,k) => vals(u, t - 24 + k/4).v.T), ok = hs.filter(h => h != null), mx = Math.max(...ok) + 1, mn = Math.min(...ok) - 1;
+  $('dSpark').innerHTML = ok.length ? `<path d="M${hs.map((h,k) => h == null ? '' : `${(k/96*360).toFixed(1)},${(64 - (h - mn)/(mx - mn || 1)*56).toFixed(1)}`).filter(Boolean).join(' L')}" fill="none" stroke="${p.st.c}" stroke-width="2.5"/><text x="356" y="12" text-anchor="end" font-size="11" fill="var(--muted)" font-family="IBM Plex Mono">${fmt(mx,0)}°</text><text x="356" y="68" text-anchor="end" font-size="11" fill="var(--muted)" font-family="IBM Plex Mono">${fmt(mn,0)}°</text>` : '';
+  // the same batch number runs bunker → tunnel → room in this sample plan
+  const k = p.batch, chain = [['b', k % 3], ['t', k % 4], ['r', k % 20]];
+  $('dTrace').innerHTML = p.idle ? '<span>Ünite boş</span>' : chain.map(([kk, ii]) => `<span class="${kk === u.k ? 'now' : ''}">${KINDS[kk].name(ii)}</span>`).join('<b>→</b>');
+  setT('dTraceL', p.idle ? 'Parti izi' : `Parti ${p2(k % 1000)} izi (örnek planlama)`);
+  const nx = phase(u.k, u.i, p.sEnd + 1e-6);
+  setT('dNext', `Sonraki: ${nx.st.n}${nx.st.op ? ' (operatör)' : ''} · ${dur(p.sEnd - t)} sonra, ${dateOf(p.sEnd).toLocaleString('tr-TR',{weekday:'short',hour:'2-digit',minute:'2-digit'})}`);
+  $('dGo').href = K.href(u.i); $('dGo').textContent = `${K.kind.split(' · ')[0] === 'ÜRETİM' ? 'Oda' : K.kind.split(' · ')[1][0] + K.kind.split(' · ')[1].slice(1).toLowerCase()} panelini aç →`;
+}
+
+/* ---------- interactions ---------- */
+document.addEventListener('click', e => {
+  const ack = e.target.closest('[data-ack]'); if (ack){ acked.add(ack.dataset.ack); render(true); return; }
+  const u = e.target.closest('[data-u]'); if (u && !e.target.closest('.drawer')) openUnit(u.dataset.u);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && selected) closeUnit();
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.u')){ e.preventDefault(); openUnit(e.target.dataset.u); }
+});
+$('scrim').addEventListener('click', closeUnit); $('dClose').addEventListener('click', closeUnit);
+$('bellBtn').addEventListener('click', () => $('alarmCard').scrollIntoView({behavior:'smooth', block:'center'}));
+$('speedSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; speed = +b.dataset.s; $('speedSeg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); });
+const root = document.documentElement;
+function applyTheme(th){ if (th === 'light') root.setAttribute('data-theme','light'); else root.removeAttribute('data-theme'); setT('themeLbl', th === 'light' ? 'Koyu tema' : 'Açık tema'); }
+let theme = 'dark'; try { theme = localStorage.getItem('makom-theme') || 'dark'; } catch(e){}
+applyTheme(theme);
+$('themeBtn').addEventListener('click', () => { theme = theme === 'light' ? 'dark' : 'light'; applyTheme(theme); try { localStorage.setItem('makom-theme', theme); } catch(e){} });
+
+/* ---------- loop ---------- */
+let slowAt = 0;
+function render(force){
+  const t = simT, al = alarmsAt(t), d = dateOf(t);
+  setT('simClock', d.toLocaleTimeString('tr-TR',{hour12:false}));
+  setT('simDate', d.toLocaleDateString('tr-TR',{weekday:'long', day:'numeric', month:'long'}).toLocaleUpperCase('tr-TR'));
+  renderMaps(t); renderLanes(t); renderQueue(t); renderAlarms(al, t, force); renderDrawer(t);
+  const now = performance.now();
+  if (force || now - slowAt > 1000){ slowAt = now; renderKpis(t, al); renderGantt(t, force); renderEnergy(t); }
+}
+buildYard(); buildFarm(); buildLanes();
+legend('yardLegend', [...KINDS.b.stages.slice(0,4), ...KINDS.t.stages.slice(1,7), IDLE].filter((s,i,a) => a.findIndex(x => x.n === s.n) === i));
+legend('farmLegend', [...KINDS.r.stages, IDLE]);
+render(true);
+setInterval(() => { simT += .25*speed/3600; render(false); }, 250);
+let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => renderGantt(simT, true), 150); });
+})();
+</script>

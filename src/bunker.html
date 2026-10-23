@@ -941,6 +941,9 @@ $('msens').innerHTML = MS.map(([l,id]) => `<div class="ms" id="ms-${id}"><span>$
 loadInputs();
 // three bunkers at different points of the batch so the overview shows real variety
 jump(B[0], 2, 26); jump(B[1], 1, 14); jump(B[2], 0, 6);
+// deep link from the control centre: bunker.html#b2
+const hm = /^#b([1-3])$/.exec(location.hash); if (hm) sel = +hm[1] - 1;
+window.addEventListener('hashchange', () => { const m = /^#b([1-3])$/.exec(location.hash); if (m) choose(+m[1] - 1); });
 showInputs(); render(); tick();
 setInterval(() => {
   const dtm = 0.25*speed/60, n = Math.max(1, Math.ceil(dtm/0.5));

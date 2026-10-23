@@ -1079,6 +1079,9 @@ for (let i=0;i<ROOMS;i++){
   rooms.push(r);
   warmUp(r, 12);
 }
+// deep link from the control centre: oda.html#oda07
+const hm = /^#oda(\d{1,2})$/.exec(location.hash); if (hm) sel = clamp(+hm[1] - 1, 0, ROOMS-1);
+window.addEventListener('hashchange', () => { const m = /^#oda(\d{1,2})$/.exec(location.hash); if (m) selectRoom(+m[1] - 1); });
 render(); tickClock();
 setInterval(() => {
   const dt = .25*speed/3600, n = Math.ceil(dt/.05);

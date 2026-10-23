@@ -349,7 +349,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-o
       <span class="credit">created by <b>GOTONOM</b></span>
     </div>
     <div class="hchips">
-      <div class="chip pair"><span class="k">TÜNEL NO</span><span class="v num">01</span></div>
+      <div class="chip pair"><span class="k">TÜNEL NO</span><span class="v num" id="tunelNo">01</span></div>
       <label class="chip pair"><span class="k">KOMPOST NO</span><input class="v num" id="kompostNo" placeholder="—" aria-label="Kompost numarası"></label>
       <div class="chip status" id="statusChip">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.3 7.3 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.3 7.3 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.3 7.3 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.3 7.3 0 0 0 1.7-1l2.5 1 2-3.5zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg>
@@ -1075,6 +1075,8 @@ $('soundBtn').addEventListener('click', e => {
 function tickClock(){ setT('clock', new Date().toLocaleTimeString('tr-TR',{hour12:false})); }
 
 buildMimic(); buildStages();
+// deep link from the control centre: tunel.html#t3 (T1–T4 on the site plan)
+const tm = /^#t([1-4])$/.exec(location.hash); if (tm) $('tunelNo').textContent = '0' + tm[1];
 // clicking the fan or a damper in the diagram jumps to its manual control
 [['v-fan','fan'],['v-fdamp','damper'],['v-rdamp','damper']].forEach(([id,k]) => {
   const g = $('g-'+id); g.style.cursor = 'pointer';
