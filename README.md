@@ -25,7 +25,7 @@ PLC bağlantısı kurulana kadar her panel örnek veriyle çalışan bir simüla
 
 ## Paylaşım kartları (Open Graph)
 
-Her sayfanın 1200 × 630 paylaşım görseli `docs/og/` içinde. Kaynağı `og/og.html` (#index, #bunker, #tunel, #oda); `python3 og/render.py` headless Chrome ile yeniden üretir. Meta etiketlerini `build.py` ekler.
+Her sayfanın 1200 × 630 paylaşım görseli `docs/og/` içinde. Kartlar her panelin canlı proses şemasını gösterir. Kaynağı `og/og.html` (#index, #bunker, #tunel, #oda): sayfaları yerel bir HTTP sunucusundan iframe ile yükleyip yalnızca şemayı alır. `python3 build.py && python3 og/render.py` headless Chrome ile yeniden üretir. Kartlar değişince `build.py` içindeki `OG_VERSION` artırılır, böylece eski önizlemeyi önbellekte tutan uygulamalar yenisini çeker.
 
 ## Güncelleme
 

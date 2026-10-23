@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).parent
 # Share links resolve against the Railway domain (GitHub Pages copies point there too).
 BASE = "https://makom-tunel-production.up.railway.app"
+OG_VERSION = 2          # bump when the cards change, so apps that cached the old image fetch the new one
 # source fragment -> (published file, share title, meta description, share card in docs/og/)
 PAGES = {
     "index.html":     ("index.html",  "MAKOM Kontrol Merkezi",
@@ -38,14 +39,14 @@ def wrap(src: str, out: str, title: str, description: str, card: str) -> str:
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{description}">
 <meta property="og:url" content="{BASE}/{'' if out == 'index.html' else out}">
-<meta property="og:image" content="{BASE}/og/{card}.png">
+<meta property="og:image" content="{BASE}/og/{card}.png?v={OG_VERSION}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="{title}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{title}">
 <meta name="twitter:description" content="{description}">
-<meta name="twitter:image" content="{BASE}/og/{card}.png">
+<meta name="twitter:image" content="{BASE}/og/{card}.png?v={OG_VERSION}">
 <meta name="theme-color" content="#0a2463">
 <link rel="icon" href="{FAVICON}">
 <style>:root{{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}}body{{margin:0;-webkit-text-size-adjust:100%}}img{{max-width:100%}}[hidden]{{display:none!important}}</style>

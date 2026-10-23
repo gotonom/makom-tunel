@@ -3,146 +3,142 @@
 <head>
 <meta charset="utf-8">
 <title>MAKOM OG kartı</title>
-<!-- Renders the 1200×630 share cards. Variant comes from the hash: #index, #bunker, #tunel, #oda.
-     Build: python3 og/render.py -->
+<!-- 1200×630 share cards built around each panel's live process diagram.
+     Variant from the hash: #index, #bunker, #tunel, #oda. The diagrams are the real pages loaded in
+     same-origin iframes, so this file must be served over HTTP from the repo root: python3 og/render.py -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=block">
 <style>
 :root{
-  --bg:#eef3fa; --panel:#ffffff; --line:#c9d8ee; --ink:#0a2463; --ink-2:#34507f; --muted:#6a7fa4; --accent:#0b6fd9;
+  --ink:#ffffff; --ink-2:#c9d7f2; --muted:#8fa5cf; --cyan:#7dd3fc; --line:rgba(255,255,255,.16);
   --f-display:"Barlow Condensed","Arial Narrow",sans-serif; --f-ui:"Barlow Semi Condensed",Arial,sans-serif; --f-mono:"IBM Plex Mono",Menlo,monospace;
 }
 *{box-sizing:border-box;margin:0}
 html,body{width:1200px;height:630px;overflow:hidden}
-body{background:var(--bg);background-image:linear-gradient(rgba(11,111,217,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(11,111,217,.07) 1px,transparent 1px);background-size:30px 30px;color:var(--ink);font-family:var(--f-ui)}
-.card{position:absolute;inset:0;display:grid;grid-template-columns:560px 1fr;gap:40px;padding:56px 56px 48px 64px}
-.band{position:absolute;left:0;top:0;bottom:0;width:14px;background:linear-gradient(#fbbf24,#f43f5e 35%,#34d399 70%,#60a5fa)}
-.left{display:flex;flex-direction:column;gap:22px;min-width:0}
+body{position:relative;color:var(--ink);font-family:var(--f-ui);
+  background:
+    radial-gradient(900px 520px at 88% 8%, rgba(56,189,248,.30), transparent 60%),
+    radial-gradient(700px 500px at 0% 100%, rgba(167,139,250,.22), transparent 60%),
+    linear-gradient(160deg,#0b2a6b 0%,#071a45 55%,#050f2b 100%)}
+.grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px);background-size:40px 40px;
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 55%,transparent 100%)}
+.stripe{position:absolute;left:0;right:0;bottom:0;height:8px;background:linear-gradient(90deg,#fbbf24,#f43f5e 30%,#a78bfa 50%,#34d399 72%,#38bdf8)}
+.top{position:absolute;left:60px;right:60px;top:46px;display:flex;justify-content:space-between;align-items:center}
 .brand{display:flex;align-items:center;gap:14px}
-.logo{width:54px;height:54px;border-radius:12px;background:var(--ink);display:grid;place-items:center}
-.brand b{font:800 30px var(--f-display);letter-spacing:.14em}
-.eyebrow{font:600 15px var(--f-mono);letter-spacing:.16em;color:var(--accent);text-transform:uppercase}
-h1{font:800 84px/.92 var(--f-display);letter-spacing:.005em}
-h1 span{color:var(--accent)}
-.sub{font:500 25px/1.32 var(--f-ui);color:var(--ink-2);max-width:500px}
-.chips{display:flex;flex-wrap:wrap;gap:10px}
-.chips span{font:700 18px var(--f-ui);padding:7px 14px;border-radius:999px;background:var(--panel);border:1.5px solid var(--line)}
-.foot{margin-top:auto;display:flex;flex-direction:column;gap:6px;font:600 15px var(--f-mono);color:var(--muted);letter-spacing:.06em}
-.foot b{color:var(--ink);font-weight:600;letter-spacing:.16em}
-.right{position:relative;border-radius:22px;background:var(--panel);border:1.5px solid var(--line);box-shadow:0 18px 50px rgba(10,36,99,.14);overflow:hidden}
-.right svg{position:absolute;inset:0;width:100%;height:100%}
-.right svg text{font-family:var(--f-ui)}
-.live{position:absolute;top:18px;right:20px;display:flex;align-items:center;gap:8px;font:600 13px var(--f-mono);letter-spacing:.12em;color:#15803d}
-.live i{width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 6px rgba(34,197,94,.18)}
+.logo{width:50px;height:50px;border-radius:12px;background:#fff;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(255,255,255,.08)}
+.brand b{font:800 28px var(--f-display);letter-spacing:.16em}
+.brand span{font:600 14px var(--f-mono);letter-spacing:.14em;color:var(--cyan);margin-left:6px;padding-left:16px;border-left:1px solid var(--line)}
+.live{display:flex;align-items:center;gap:10px;font:600 14px var(--f-mono);letter-spacing:.14em;color:#86efac;padding:8px 14px;border-radius:999px;background:rgba(34,197,94,.10);border:1px solid rgba(134,239,172,.35)}
+.live i{width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 12px #22c55e}
+.head{position:absolute;left:60px;top:118px;right:60px;display:flex;align-items:flex-end;justify-content:space-between;gap:30px}
+h1{font:800 92px/.9 var(--f-display);letter-spacing:.005em;white-space:nowrap;text-shadow:0 6px 30px rgba(0,0,0,.35)}
+h1 span{background:linear-gradient(90deg,#7dd3fc,#a5b4fc);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tag{font:500 23px/1.3 var(--f-ui);color:var(--ink-2);max-width:470px;text-align:right;padding-bottom:6px}
+.foot{position:absolute;left:60px;bottom:26px;font:600 14px var(--f-mono);letter-spacing:.08em;color:var(--muted)}
+.foot b{color:#fff;letter-spacing:.18em}
+.url{position:absolute;right:60px;bottom:26px;font:600 14px var(--f-mono);color:var(--muted)}
+
+/* the "control desk": a screen tilted back, carrying the live diagram */
+.stage{position:absolute;left:0;right:0;top:232px;height:330px;perspective:1500px;perspective-origin:50% 0%}
+.screen{position:absolute;border-radius:14px;overflow:hidden;background:#f3f8fe;
+  box-shadow:0 0 0 1px rgba(255,255,255,.35),0 0 0 8px rgba(255,255,255,.06),0 30px 60px rgba(0,0,0,.55),0 0 80px rgba(56,189,248,.35);
+  transform-origin:50% 0%}
+.screen iframe{border:0;display:block;transform-origin:0 0;background:#f3f8fe}
+.screen .cap{position:absolute;left:14px;top:12px;z-index:2;font:700 13px var(--f-mono);letter-spacing:.12em;color:#fff;background:#0a2463;padding:5px 10px;border-radius:6px}
+.glare{position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.22) 0%,rgba(255,255,255,0) 35%)}
+.badge{position:absolute;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:14px;background:rgba(255,255,255,.96);color:#0a2463;box-shadow:0 14px 34px rgba(0,0,0,.35)}
+.badge i{width:12px;height:12px;border-radius:50%}
+.badge b{font:800 26px/1 var(--f-display)}
+.badge small{display:block;font:600 12px var(--f-mono);letter-spacing:.08em;color:#6a7fa4;margin-top:3px}
+.hb{display:flex;gap:12px;padding-bottom:8px}
+.hb .badge{position:static}
+.flow{position:absolute;z-index:6;font:700 15px var(--f-mono);letter-spacing:.12em;color:#fff;background:rgba(10,36,99,.85);border:1px solid rgba(125,211,252,.6);padding:6px 12px;border-radius:999px}
 </style>
 </head>
 <body>
-<div class="band"></div>
-<div class="card">
-  <div class="left">
-    <div class="brand"><span class="logo"><svg width="32" height="32" viewBox="0 0 32 32"><path d="M5 25V8l11 10L27 8v17" fill="none" stroke="#fff" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="round"/></svg></span><b>MAKOM</b></div>
-    <div class="eyebrow" id="eyebrow"></div>
-    <h1 id="title"></h1>
-    <p class="sub" id="sub"></p>
-    <div class="chips" id="chips"></div>
-    <div class="foot"><span>created by <b>GOTONOM</b></span><span>makom-tunel-production.up.railway.app</span></div>
-  </div>
-  <div class="right"><span class="live"><i></i>CANLI SİMÜLASYON</span><svg id="viz" viewBox="0 0 540 518"></svg></div>
+<div class="grid"></div>
+<div class="top">
+  <div class="brand"><span class="logo"><svg width="30" height="30" viewBox="0 0 32 32"><path d="M5 25V8l11 10L27 8v17" fill="none" stroke="#0a2463" stroke-width="3.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span><b>MAKOM</b><span id="eyebrow"></span></div>
+  <div class="live"><i></i>CANLI SİMÜLASYON</div>
 </div>
+<div class="head"><h1 id="title"></h1><p class="tag" id="tag"></p></div>
+<div class="stage" id="stage"></div>
+<div class="foot">created by <b>GOTONOM</b></div>
+<div class="url">makom-tunel-production.up.railway.app</div>
+<div class="stripe"></div>
 <script>
 const V = {
-  index: { eyebrow:'Tesis kontrol merkezi', title:'MAKOM<br><span>Kontrol Merkezi</span>',
-    sub:'3 bunker, 4 tünel ve 20 üretim odası tek ekranda: canlı saha planı, üretim takvimi, enerji ve alarmlar.',
-    chips:['3 bunker','4 tünel','20 oda','52 günlük döngü'] },
-  bunker: { eyebrow:'Faz 1 · bunker otomasyonu', title:'Faz 1<br><span>Bunker</span>',
-    sub:'Fan 5 dk çalışır, 25 dk durur. Gerekirse 6–7 dk’ya uzar; 7 dk PLC donanım sınırıdır.',
-    chips:['3 × 18,00 × 7,20 m','8 kompost probu','°C/saat değişim hızı'] },
-  tunel: { eyebrow:'Faz 2 · tünel otomasyonu', title:'Faz 2<br><span>Tünel</span>',
-    sub:'Pastörizasyon ve kondisyonlama: 7 etaplı tarif, otomatik geçiş, manuel müdahale ve alarm senaryoları.',
-    chips:['30 kW · 1.450 d/dk','18.000 m³/h · 4.000 Pa','Danfoss FC 102'] },
-  oda: { eyebrow:'Mantar üretim odaları', title:'Üretim<br><span>Odaları</span>',
-    sub:'20 odanın iklim kontrolü: sıcaklık, nem, CO₂ ve taze hava, kuluçkadan boşaltmaya 52 gün boyunca.',
-    chips:['20 oda · 126 m²','Pinning → 2. flaş','CO₂ · RH · T'] },
+  index:  { eyebrow:'TESİS KONTROL MERKEZİ', title:'Kontrol <span>Merkezi</span>', tag:'3 bunker, 4 tünel ve 20 üretim odası tek ekranda, kompostun bütün yolculuğu.' },
+  bunker: { eyebrow:'FAZ 1 · BUNKER', title:'Faz 1 <span>Bunker</span>', tag:'Fan 5 dk çalışır, 25 dk durur; gerekirse 6–7 dk. 7 dk PLC sınırı.' },
+  tunel:  { eyebrow:'FAZ 2 · TÜNEL', title:'Faz 2 <span>Tünel</span>', tag:'Pastörizasyon ve kondisyonlama: 7 etaplı tarif, otomatik geçiş.' },
+  oda:    { eyebrow:'MANTAR ÜRETİMİ', title:'Üretim <span>Odaları</span>', tag:'20 oda: sıcaklık, nem, CO₂ ve taze hava, 52 günlük döngü.' },
 };
 const key = (location.hash || '#index').slice(1), v = V[key] || V.index;
 document.getElementById('eyebrow').textContent = v.eyebrow;
 document.getElementById('title').innerHTML = v.title;
-document.getElementById('sub').textContent = v.sub;
-document.getElementById('chips').innerHTML = v.chips.map(c => `<span>${c}</span>`).join('');
+document.getElementById('tag').textContent = v.tag;
 
-const ROOMC = ['#c08a4a','#c08a4a','#c08a4a','#a8a29e','#a8a29e','#60a5fa','#60a5fa','#34d399','#34d399','#64748b','#10b981','#10b981','#f97316','#c08a4a','#a8a29e','#60a5fa','#34d399','#64748b','#10b981','#cbd5e1'];
-const soil = `<pattern id="soil" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#7a4a26"/><circle cx="3" cy="3" r="1.6" fill="#5a3418"/><circle cx="9" cy="8" r="1.3" fill="#a3703f"/></pattern>`;
-let g = `<defs>${soil}<linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b6fd9" stop-opacity=".28"/><stop offset="1" stop-color="#0b6fd9" stop-opacity="0"/></linearGradient></defs>`;
+// Show only the page's process diagram inside the frame.
+const ONLY_MIMIC = `html,body{background:#f3f8fe!important;overflow:hidden!important}
+  .wrap{padding:0!important;max-width:none!important;gap:0!important}
+  .wrap>*:not(.mimic){display:none!important}
+  .mimic{border:0!important;border-radius:0!important;box-shadow:none!important}
+  .mimic-hint,.msens{display:none!important}
+  *{animation-play-state:paused!important}`;
+const FRAME_W = 1500;
+function screen({src, x, y, w, rx = 16, ry = -6, z = 1, cap, prep}){
+  const el = document.createElement('div');
+  el.className = 'screen'; el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.width = w + 'px'; el.style.zIndex = z;
+  el.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+  const f = document.createElement('iframe');
+  f.style.width = FRAME_W + 'px'; f.style.height = '700px';
+  f.src = src;
+  f.onload = () => {
+    const d = f.contentDocument, st = d.createElement('style'); st.textContent = ONLY_MIMIC; d.head.append(st);
+    if (prep) prep(d);
+    setTimeout(() => {
+      const m = d.querySelector('.mimic'), h = Math.ceil(m.getBoundingClientRect().height), k = w/FRAME_W;
+      f.style.height = h + 'px'; f.style.transform = `scale(${k})`; el.style.height = Math.round(h*k) + 'px';
+    }, 400);
+  };
+  el.append(f);
+  if (cap){ const c = document.createElement('span'); c.className = 'cap'; c.textContent = cap; el.append(c); }
+  const g = document.createElement('div'); g.className = 'glare'; el.append(g);
+  document.getElementById('stage').append(el);
+}
+// Key figures sit in the header, right of the title, so nothing covers the diagram.
+function badges(list){
+  const box = document.createElement('div'); box.className = 'hb';
+  box.innerHTML = list.map(([color, val, label]) => `<div class="badge"><i style="background:${color}"></i><div><b>${val}</b><small>${label}</small></div></div>`).join('');
+  document.getElementById('tag').replaceWith(box);
+}
+function flow(x, y, t){ const f = document.createElement('div'); f.className = 'flow'; f.style.left = x + 'px'; f.style.top = y + 'px'; f.textContent = t; document.body.append(f); }
+const click = (d, sel) => { const e = d.querySelector(sel); if (e) e.click(); };
 
 if (key === 'bunker'){
-  // side section of a bunker with 8 probes, then the 5/25 PLC cycle
-  g += `<text x="34" y="62" font-size="15" font-weight="700" fill="#6a7fa4" letter-spacing="2" font-family="IBM Plex Mono">BUNKER 2 · FERMENTASYON 2</text>
-    <rect x="30" y="96" width="480" height="210" rx="6" fill="#e3e0db"/>
-    <path d="M44,286 L44,170 Q60,138 110,132 L430,128 Q486,134 496,170 L496,286Z" fill="url(#soil)"/>
-    <rect x="30" y="286" width="480" height="22" rx="4" fill="#b8b2aa"/>
-    <rect x="44" y="270" width="452" height="10" rx="5" fill="#dfe5ec" stroke="#9aa5b0"/>`;
-  [74.1,75.3,76.2,76.8,77.3,76.5,75.7,74.8].forEach((t,i) => {
-    const x = 72 + i*57;
-    g += `<line x1="${x}" y1="98" x2="${x}" y2="200" stroke="#2b3442" stroke-width="3"/><rect x="${x-4}" y="194" width="8" height="14" rx="3" fill="#2b3442"/>
-      <rect x="${x-25}" y="70" width="50" height="30" rx="6" fill="#fff" stroke="#c9d8ee"/><text x="${x}" y="91" text-anchor="middle" font-size="15" font-weight="700" fill="#0a2463" font-family="Barlow Condensed">${t.toFixed(1).replace('.',',')}°</text>`;
-  });
-  for (let x = 70; x <= 480; x += 46) g += `<path d="M${x},268 L${x},236" stroke="#2f7de8" stroke-width="3"/><path d="M${x-6},240 L${x},228 L${x+6},240Z" fill="#2f7de8"/>`;
-  g += `<text x="34" y="360" font-size="15" font-weight="700" fill="#6a7fa4" letter-spacing="2" font-family="IBM Plex Mono">FAN ÇEVRİMİ · 30 DK</text>
-    <rect x="34" y="376" width="472" height="38" rx="8" fill="#eaf3fd" stroke="#c9d8ee"/>
-    <rect x="34" y="376" width="${472*5/30}" height="38" rx="8" fill="#1b5fd9"/>
-    <rect x="${34+472*5/30}" y="376" width="${472*2/30}" height="38" fill="#f59e0b" opacity=".85"/>
-    <rect x="${34+472*7/30-2}" y="370" width="4" height="50" fill="#dc2626"/>
-    <text x="${34+472*5/30/2}" y="401" text-anchor="middle" font-size="16" font-weight="800" fill="#fff" font-family="Barlow Condensed">5 dk</text>
-    <text x="${34+472*7/30+10}" y="401" font-size="15" font-weight="700" fill="#dc2626" font-family="IBM Plex Mono">7 dk PLC sınırı</text>
-    <text x="500" y="401" text-anchor="end" font-size="16" font-weight="700" fill="#34507f" font-family="Barlow Condensed">25 dk durma</text>`;
-  const bars = [5,5,5,5,5,5,5,5,6,7,5,5,5,5,5,5,5,5,5,5,5,5,5,5];
-  bars.forEach((c,i) => { const h = c/7*56; g += `<rect x="${34 + i*19.7}" y="${506-h}" width="15" height="${h}" rx="3" fill="${c >= 7 ? '#dc2626' : c >= 6 ? '#f59e0b' : '#1b5fd9'}"/>`; });
-  g += `<text x="506" y="440" text-anchor="end" font-size="28" font-weight="800" fill="#0a2463" font-family="Barlow Condensed">%92 · 5 dk</text>`;
+  // slow the demo and run the fan by hand so the diagram shows air flowing through the pile
+  screen({src:'/docs/bunker.html', x:60, y:6, w:1080, rx:18, ry:0, prep: d => {
+    click(d, '#speedSeg [data-s="1"]');
+    const m = d.getElementById('s-mode'); m.value = 'manual'; m.dispatchEvent(new Event('change'));
+    click(d, '#manOn');
+  }});
+  badges([['#1b5fd9','5 / 25 dk','FAN ÇEVRİMİ'], ['#dc2626','7 dk','PLC SINIRI']]);
+} else if (key === 'tunel'){
+  screen({src:'/docs/tunel.html', x:60, y:6, w:1080, rx:18, ry:0});
+  badges([['#f43f5e','58,5 °C','PASTÖRİZASYON'], ['#1b5fd9','18.000 m³/h','30 kW · 4.000 Pa']]);
+} else if (key === 'oda'){
+  screen({src:'/docs/oda.html', x:60, y:6, w:1080, rx:18, ry:0});
+  badges([['#60a5fa','16,0 °C','PINNING · ODA 01'], ['#34d399','800 ppm','CO₂ HEDEFİ']]);
+} else {
+  // three phases cascading front to back, like screens on a control desk
+  screen({src:'/docs/bunker.html', x:40,  y:0,   w:620, rx:14, ry:10,  z:1, cap:'FAZ 1 · BUNKER', prep: d => {
+    click(d, '#speedSeg [data-s="1"]'); const m = d.getElementById('s-mode'); m.value = 'manual'; m.dispatchEvent(new Event('change')); click(d, '#manOn'); }});
+  screen({src:'/docs/tunel.html',  x:300, y:62,  w:620, rx:14, ry:0,   z:2, cap:'FAZ 2 · TÜNEL'});
+  screen({src:'/docs/oda.html',    x:560, y:124, w:620, rx:14, ry:-10, z:3, cap:'ÜRETİM · ODA'});
+  flow(640, 254, 'FAZ 1 → FAZ 2');
+  flow(900, 316, 'FAZ 2 → ODALAR');
 }
-else if (key === 'tunel'){
-  // the Faz 2 recipe as a temperature curve with stage bands
-  const st = [['LEV',10,'#38bdf8'],['WARM',7.5,'#fb923c'],['PAS',9,'#f43f5e'],['CD',7.5,'#a78bfa'],['CONDITIONING',72,'#34d399'],['SON',8,'#22d3ee']];
-  const total = st.reduce((a,s) => a + s[1], 0), X0 = 50, W = 460, xs = h => X0 + Math.sqrt(h/total)*W;   // √ time so short stages stay visible
-  const Y = t => 440 - (t - 20)/45*340;
-  let a = 0; st.forEach(s => { g += `<rect x="${xs(a)}" y="96" width="${xs(a+s[1]) - xs(a)}" height="344" fill="${s[2]}" opacity=".16"/><text x="${(xs(a)+xs(a+s[1]))/2}" y="470" text-anchor="middle" font-size="${s[1] > 20 ? 15 : 12}" font-weight="700" fill="#34507f" font-family="IBM Plex Mono">${s[0]}</text>`; a += s[1]; });
-  [25,40,55].forEach(t => g += `<line x1="${X0}" x2="${X0+W}" y1="${Y(t)}" y2="${Y(t)}" stroke="#c9d8ee" stroke-dasharray="4 5"/><text x="${X0-8}" y="${Y(t)+5}" text-anchor="end" font-size="14" fill="#6a7fa4" font-family="IBM Plex Mono">${t}°</text>`);
-  const pts = []; for (let h = 0; h <= total; h += .25){ let T;
-    if (h < 10) T = 48.5; else if (h < 17.5) T = 48.5 + (h-10)/7.5*10; else if (h < 26.5) T = 58.5; else if (h < 34) T = 58.5 - (h-26.5)/7.5*9.2; else if (h < 106) T = 49.3; else T = 49.3 - (h-106)/8*24.3;
-    pts.push(`${xs(h).toFixed(1)},${Y(T).toFixed(1)}`); }
-  g += `<path d="M${pts[0]} L${pts.join(' L')} L${xs(total)},440 L${X0},440Z" fill="url(#fade)"/><path d="M${pts.join(' L')}" fill="none" stroke="#0b6fd9" stroke-width="5" stroke-linejoin="round"/>`;
-  g += `<circle cx="${xs(22)}" cy="${Y(58.5)}" r="9" fill="#f43f5e" stroke="#fff" stroke-width="3"/><text x="${xs(22)}" y="${Y(58.5)-22}" text-anchor="middle" font-size="26" font-weight="800" fill="#0a2463" font-family="Barlow Condensed">58,5 °C</text>
-    <text x="34" y="62" font-size="15" font-weight="700" fill="#6a7fa4" letter-spacing="2" font-family="IBM Plex Mono">TARİF · ~110 SAAT</text>`;
-}
-else if (key === 'oda'){
-  // the 10 + 10 room block around the corridor, coloured by stage
-  const W = 44, H = 150, x0 = 50, y0 = 92;
-  g += `<rect x="${x0-8}" y="${y0-8}" width="${10*W+16}" height="${2*H+46+16}" rx="10" fill="#eef3fa" stroke="#c9d8ee"/><rect x="${x0}" y="${y0+H}" width="${10*W}" height="46" fill="#dde8f6"/><text x="${x0+5*W}" y="${y0+H+29}" text-anchor="middle" font-size="14" font-weight="700" fill="#6a7fa4" letter-spacing="3" font-family="IBM Plex Mono">5 m KORİDOR</text>`;
-  for (let i=0;i<20;i++){ const c = i % 10, top = i < 10, x = x0 + c*W, y = top ? y0 : y0 + H + 46;
-    g += `<rect x="${x+2}" y="${y+2}" width="${W-4}" height="${H-4}" rx="5" fill="${ROOMC[i]}"/><text x="${x+W/2}" y="${y+30}" text-anchor="middle" font-size="19" font-weight="800" fill="#fff" font-family="Barlow Condensed">${String(i+1).padStart(2,'0')}</text>`;
-    for (let k=0;k<5;k++) g += `<rect x="${x+9}" y="${y+48+k*18}" width="${W-18}" height="5" rx="2" fill="#fff" opacity=".55"/>`; }
-  g += `<text x="34" y="62" font-size="15" font-weight="700" fill="#6a7fa4" letter-spacing="2" font-family="IBM Plex Mono">20 ODA · 7,00 × 18,00 m</text>`;
-  const leg = [['Kuluçka','#c08a4a'],['Örtü','#a8a29e'],['Pinning','#60a5fa'],['Flaş','#34d399'],['Boşaltma','#f97316']];
-  leg.forEach((l,i) => g += `<rect x="${50 + i*94}" y="470" width="14" height="14" rx="3" fill="${l[1]}"/><text x="${70 + i*94}" y="482" font-size="16" font-weight="600" fill="#34507f">${l[0]}</text>`);
-}
-else {
-  // site overview: yard (bunkers, tunnels) and the room block, linked by the compost flow
-  g += `<text x="34" y="62" font-size="15" font-weight="700" fill="#6a7fa4" letter-spacing="2" font-family="IBM Plex Mono">KOMPOST SAHASI → ÜRETİM</text>
-    <rect x="30" y="86" width="250" height="218" rx="10" fill="#eef3fa" stroke="#c9d8ee"/>`;
-  ['#fbbf24','#fb923c','#60a5fa'].forEach((c,i) => g += `<rect x="44" y="${100 + i*46}" width="120" height="40" rx="5" fill="url(#soil)"/><rect x="44" y="${100 + i*46}" width="120" height="40" rx="5" fill="${c}" opacity=".45"/><text x="56" y="${126 + i*46}" font-size="20" font-weight="800" fill="#fff" font-family="Barlow Condensed">B${i+1}</text>`);
-  ['#34d399','#f43f5e','#cbd5e1','#34d399'].forEach((c,i) => g += `<rect x="184" y="${100 + i*36}" width="82" height="30" rx="4" fill="${c}"/><text x="194" y="${121 + i*36}" font-size="17" font-weight="800" fill="#fff" font-family="Barlow Condensed">T${4-i}</text>`);
-  g += `<path d="M164,260 C 200,300 230,310 270,330" fill="none" stroke="#0b6fd9" stroke-width="4" stroke-dasharray="8 9"/>`;
-  const W = 46, x0 = 44, y0 = 330;
-  g += `<rect x="30" y="${y0-14}" width="480" height="190" rx="10" fill="#eef3fa" stroke="#c9d8ee"/>`;
-  for (let i=0;i<20;i++){ const c = i % 10, top = i < 10, x = x0 + c*W, y = top ? y0 : y0 + 84;
-    g += `<rect x="${x+2}" y="${y}" width="${W-4}" height="70" rx="4" fill="${ROOMC[i]}"/><text x="${x+W/2}" y="${y+24}" text-anchor="middle" font-size="16" font-weight="800" fill="#fff" font-family="Barlow Condensed">${String(i+1).padStart(2,'0')}</text>`; }
-  g += `<g transform="translate(300 100)"><rect width="210" height="200" rx="12" fill="#0a2463"/>
-    <text x="20" y="40" font-size="14" font-weight="600" fill="#93c5fd" letter-spacing="2" font-family="IBM Plex Mono">ANLIK</text>
-    <text x="20" y="96" font-size="58" font-weight="800" fill="#fff" font-family="Barlow Condensed">22/27</text>
-    <text x="20" y="124" font-size="17" fill="#cbd5e1">ünite çalışıyor</text>
-    <path d="M20,180 L50,166 L80,172 L110,150 L140,158 L170,138 L190,144" fill="none" stroke="#34d399" stroke-width="4" stroke-linejoin="round"/></g>`;
-}
-document.getElementById('viz').innerHTML = g;
 </script>
 </body>
 </html>
