@@ -38,6 +38,7 @@ railway up --service makom-tunel --detach
 ## Tesis değerleri
 
 - **Faz 2 tünel (MAKOM):** fan %100: 18.000 m³/h, 4.000 Pa, 30 kW, 1.450 d/dk · Danfoss VLT HVAC FC 102 (37 kW) · Belimo 20 Nm damper servoları · tünel 4 × 15 m (T1–T4) · 16 × Ø160 PVC spigot hattı · Ø800 ana flanş.
+  Dönüş havasında NH₃ ölçer: kondisyonlama en az 72 sa ve NH₃ ≤ 10 ppm olunca biter, en geç 76 sa. Sensör arızasında bitiş süreye göre (72 sa).
 - **Faz 1 bunker:** 3 bunker, 18,00 × 7,20 m iç ölçü.
 - **Üretim odaları:** 20 oda, 7,00 × 18,00 m (126 m²), 10 + 10 karşılıklı, 5 m koridor.
 

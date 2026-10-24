@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).parent
 # Share links resolve against the Railway domain (GitHub Pages copies point there too).
 BASE = "https://makom-tunel-production.up.railway.app"
-OG_VERSION = 2          # bump when the cards change, so apps that cached the old image fetch the new one
+OG_VERSION = 3          # bump when the cards change, so apps that cached the old image fetch the new one
 # source fragment -> (published file, share title, meta description, share card in docs/og/)
 PAGES = {
     "index.html":     ("index.html",  "MAKOM Kontrol Merkezi",

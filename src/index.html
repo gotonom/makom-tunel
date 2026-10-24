@@ -357,7 +357,7 @@ function bunkerVals(p, t){
 }
 const TFAN = [30,55,50,58,68,55,85,0];
 function tunnelVals(p, t){
-  if (p.idle) return { T:null, fan:false, kw:0, avgKw:0, f:0 };
+  if (p.idle) return { T:null, fan:false, kw:0, avgKw:0, f:0, nh3:null };
   const L = p.ls; let T;
   switch (p.si){
     case 0: T = 52; break; case 1: T = 48.5; break;
@@ -366,8 +366,10 @@ function tunnelVals(p, t){
     case 6: T = Math.max(25, 49.3 - 3*L); break; default: T = 25;
   }
   T += 0.25*wob(t, p.i + 3);
+  // return-air ammonia: peaks in pasteurization, converted during conditioning (ends ≤ 10 ppm)
+  const nh3 = [150, 180, 180 + 150*Math.min(L/7.5, 1), 450, 450 - 120*Math.min(L/7.5, 1), 330*Math.exp(-L/18), 3, 1][p.si] * (1 + 0.03*wob(t, p.i + 7));
   const f = TFAN[p.si]/100;
-  return { T, fan: f > 0, kw: SPEC.tunnelKw*f**3, avgKw: SPEC.tunnelKw*f**3, f };
+  return { T, fan: f > 0, kw: SPEC.tunnelKw*f**3, avgKw: SPEC.tunnelKw*f**3, f, nh3 };
 }
 const RT = [22.5,22,22,16.5,17,17.5,17,null], RC = [6000,4000,3500,900,900,1200,900,600], RH = [95,95,95,91,87,91,87,55], RF = [40,45,45,65,70,55,70,80];
 function roomVals(p, t){
@@ -667,7 +669,7 @@ function renderDrawer(t){
   setT('dProgR', `${dur(p.ls)} / ${dur(p.sEnd - p.sStart)}`);
   $('dProg').style.width = clamp(p.ls/(p.sEnd - p.sStart)*100, 0, 100) + '%'; $('dProg').style.background = p.st.c;
   const cells = u.k === 'b' ? [['Ort. sıcaklık', fmt(v.T), '°C'], ['Fan', v.fan ? `ÇALIŞIYOR` : 'BEKLEMEDE', ''], ['O₂', fmt(v.o2), '%'], [v.fan ? 'Kalan çalışma' : 'Sonraki çalışma', dur(v.left/60), '']]
-    : u.k === 't' ? [['Kompost', p.idle ? '—' : fmt(v.T), '°C'], ['Fan', fmt(v.f*100,0), '%'], ['Fan gücü', fmt(v.kw,1), 'kW'], ['Etap sonu', dur(p.sEnd - t), '']]
+    : u.k === 't' ? [['Kompost', p.idle ? '—' : fmt(v.T), '°C'], ['NH₃ dönüş havası', p.idle ? '—' : fmt(v.nh3,0), 'ppm'], ['Fan', `${fmt(v.f*100,0)} %`, `${fmt(v.kw,1)} kW`], ['Etap sonu', dur(p.sEnd - t), '']]
     : [['Oda sıcaklığı', p.idle ? '—' : fmt(v.T), '°C'], ['CO₂', p.idle ? '—' : fmt(v.co2,0), 'ppm'], ['Bağıl nem', p.idle ? '—' : fmt(v.rh,0), '%'], ['Döngü günü', p.idle ? '—' : `${v.day} / 52`, '']];
   $('dGrid').innerHTML = cells.map(([l, val, un]) => `<div class="dm"><span>${l}</span><b class="num">${val} <small>${un}</small></b></div>`).join('');
   const hs = Array.from({length:97}, (_,k) => vals(u, t - 24 + k/4).v.T), ok = hs.filter(h => h != null), mx = Math.max(...ok) + 1, mn = Math.min(...ok) - 1;

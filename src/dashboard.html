@@ -545,7 +545,7 @@ const STAGES = [
   {name:'WARM UP', lines:['6–10 saat','+1,5 °C/saat','58,3–59 °C'], dur:[6,10], sp:58.6, ramp:1.5, fanBase:50, bio:1, inlet:s=>s.spComp-3.5},
   {name:'PASTÖRİZASYON', lines:['8–10 saat','hedef 58,5 °C','58–59,8 °C','inlet 53–56 °C'], dur:[8,10], sp:58.5, ramp:0, fanBase:58, bio:1, inlet:()=>54.5},
   {name:'COOL DOWN', lines:['7–10 saat','hedef 49,3 ±1 °C','ΔT max 5 °C'], dur:[7,10], sp:49.3, ramp:-1.4, fanBase:68, bio:.8, inlet:s=>s.spComp-4.5},
-  {name:'CONDITIONING', lines:['72–76 saat','49,3 ±1 °C','inlet 43–48 °C'], dur:[72,76], sp:49.3, ramp:0, fanBase:55, bio:.9, inlet:()=>45.5},
+  {name:'CONDITIONING', lines:['72–76 saat','49,3 ±1 °C','NH₃ ≤ 10 ppm'], dur:[72,76], sp:49.3, ramp:0, fanBase:55, bio:.9, inlet:()=>45.5},
   {name:'SON SOĞUTMA', lines:['hedef 8 saat • max 10 saat','yaklaşık 25 °C'], dur:[8,10], sp:25, ramp:-3.2, fanBase:85, bio:.4, inlet:s=>s.spComp-6},
   {name:'TÜNEL BOŞALTMA & FAN KAPATMA', short:'TÜNEL BOŞALTMA', lines:[], dur:null, sp:null, ramp:0, fanBase:0, bio:.2, inlet:()=>null},
 ];
@@ -555,7 +555,7 @@ const RULE = [
   'Ortalama ≥ 58,3 °C → Pastörizasyon',
   '58–59,8 °C bandında 8 sa → Cool down',
   'Min 7 sa ve ortalama ≤ 50,3 °C → Conditioning',
-  'Min 72 sa → Son soğutma',
+  'Min 72 sa ve NH₃ ≤ 10 ppm → Son soğutma (en geç 76 sa)',
   'Min 8 sa ve ortalama ≤ 27 °C → Boşaltma',
   'Fan kapalı, tünel boşaltılabilir'
 ];
@@ -635,7 +635,7 @@ function buildMimic(){
   // dampers
   g += damper(255,420,'bladeFresh') + damper(538,164,'bladeRet');
   // probes
-  g += probe(82,378,420) + probe(648,84,166) + probe(774,84,166) + probe(773,382,422) + probe(875,382,422);
+  g += probe(82,378,420) + probe(648,84,166) + probe(774,84,166) + probe(908,84,166) + probe(773,382,422) + probe(875,382,422);
   g += `<line class="probe" x1="1548" y1="62" x2="1524" y2="62"/><rect class="probe-tip" x="1512" y="58" width="14" height="8" rx="3"/>`;
   [[908,330],[1088,278],[1288,278],[1494,330]].forEach(([x,y])=> g += probe(x,264,y));
   // leaders from damper / fan boxes
@@ -645,7 +645,7 @@ function buildMimic(){
   [600,712,850,1010,1170,1330,1440].forEach(x=> g += arrow(x,164,'l'));
   g += arrow(447,236,'d')+arrow(447,316,'d')+arrow(1504,170,'u')+arrow(1504,92,'u');
   // labels
-  g += `<text class="tag-lbl" x="912" y="128">DÖNÜŞ HAVASI</text>
+  g += `<text class="tag-lbl" x="1000" y="128">DÖNÜŞ HAVASI</text>
         <text class="tag-lbl" x="1462" y="84" text-anchor="end">EGZOZ</text>
         <text class="tag-lbl" x="70" y="476">TAZE HAVA</text>
         <rect x="780" y="458" width="156" height="24" fill="#fff" stroke="var(--line)" rx="3"/>
@@ -655,7 +655,7 @@ function buildMimic(){
         <rect x="948" y="458" width="130" height="22" rx="3" fill="#fff" stroke="var(--line)"/>
         <text x="1013" y="474" text-anchor="middle" style="font-weight:700;font-size:13px;fill:var(--ink-2)">Ø800 ANA FLANŞ · 4 m</text>`;
   // value boxes
-  g += sbox(592,28,112,56,'T_RETURN','v-tret') + sbox(716,28,118,56,'O2_RETURN','v-o2');
+  g += sbox(592,28,112,56,'T_RETURN','v-tret') + sbox(716,28,118,56,'O2_RETURN','v-o2') + sbox(846,28,124,56,'NH₃_RETURN','v-nh3');
   g += sbox(318,96,180,48,'GERİ DÖNÜŞ DAMPERİ','v-rdamp',{dark:true,big:true});
   g += sbox(1548,22,88,58,'T_EXHAUST','v-texh');
   [858,1038,1238,1444].forEach((x,i)=> g += sbox(x,214,100,50,`T_COMP_${i+1}`,`v-tc${i}`));
@@ -695,6 +695,12 @@ const BASE_OFF = [0.3,-0.4,0.6,-0.2];
 // Nominal stage lengths used when the demo jumps to a later stage, and the compost temperature each stage starts from.
 const NOM = [10, 7.5, 9, 7.5, 72, 8];
 const START_T = [null, 48.5, 58.4, 58.5, 49.3, 49.3, 25];
+// Ammonia in the return air (ppm): rises with temperature, peaks during pasteurization (400–500 ppm, Janssen ISMS 2016)
+// and is converted during conditioning; the batch is ready when it is below the limit (Penn State: no smell left).
+const NH3_LIMIT = 10;
+const NH3_T = [180, 330, 450, 320, null, 3, 1];      // stage targets; conditioning decays instead
+const NH3_START = [150, 200, 420, 400, 260, 8, 3];
+const NH3_TAU = 18;                                  // h, conversion time constant at 45–52 °C
 
 const SCEN = [
   {k:'fan',    sev:'crit', name:'Fan arızası',               desc:'VLT FC 102 trip, fan durur'},
@@ -705,6 +711,8 @@ const SCEN = [
   {k:'probe',  sev:'warn', name:'T_COMP_3 prob arızası',     desc:'Prob 9 °C düşük okur'},
   {k:'tin',    sev:'warn', name:'T_INLET sensör kopuk',      desc:'4–20 mA sinyali kaybolur'},
   {k:'door',   sev:'warn', name:'Tünel kapısı açık',         desc:'Dış hava girer, etap bekletilir'},
+  {k:'nh3',    sev:'warn', name:'NH₃ sensörü arızası',       desc:'Dönüş havası amonyak ölçümü kesilir'},
+  {k:'nh3slow',sev:'warn', name:'Yavaş kondisyonlama',       desc:'Amonyak yavaş düşer, etap uzar'},
 ];
 const SC = {};
 // Manual override per actuator; everything else (setpoints, stage changes, alarms, the other actuator) stays automatic.
@@ -721,7 +729,7 @@ function startAt(i){
   const T0 = i===0 ? (inp > 5 && inp < 80 ? inp : 45) : START_T[i];
   const S = STAGES[i];
   x.avg = T0; x.spComp = S.ramp ? T0 : (S.sp ?? T0);
-  x.fan = S.fanBase; x.f = i===6 ? 0 : 0.12; x.o2 = i===6 ? 19.8 : 15;
+  x.fan = S.fanBase; x.f = i===6 ? 0 : 0.12; x.o2 = i===6 ? 19.8 : 15; x.nh3 = NH3_START[i]; x.nh3m = x.nh3; x.nh3Note = null;
   x.tIn = T0 - 3; x.tRet = T0 - 0.7; x.tExh = T0 - 1.5; x.inletSp = S.inlet(x);
   return x;
 }
@@ -738,7 +746,8 @@ function measure(){
   s.mAvg = vv.reduce((a,b)=>a+b,0)/vv.length;
   s.min = Math.min(...vv); s.max = Math.max(...vv); s.dT = s.max - s.min;
 }
-function advance(){ s.done[s.stage] = s.t - s.stageStart; s.stage++; s.stageStart = s.t; s.inBand = 0; }
+function advance(){
+  if (s.stage === 4 && !SC.nh3 && s.nh3m > NH3_LIMIT) s.nh3Note = {t:s.t, v:s.nh3m}; s.done[s.stage] = s.t - s.stageStart; s.stage++; s.stageStart = s.t; s.inBand = 0; }
 
 function step(dt){
   const S = STAGES[s.stage];
@@ -798,6 +807,11 @@ function step(dt){
   let o2T = s.fan > 1 ? 20.9 - 1.2*S.bio/(s.f + 0.1) : (s.stage === 6 ? 19.8 : 3);
   if (SC.door) o2T = Math.max(o2T, 18);
   s.o2 += (o2T - s.o2)*Math.min(1, dt*(s.fan > 1 ? 4 : 0.7));
+  // ammonia: driven off with heat early on, converted by microbes during conditioning (fastest near 45–52 °C)
+  if (s.stage === 4){ const eff = clamp(1 - Math.abs(s.avg - 49)/12, .25, 1)*(SC.nh3slow ? .4 : 1); s.nh3 -= s.nh3/NH3_TAU*eff*dt; }
+  else s.nh3 += (NH3_T[s.stage] - s.nh3)*Math.min(1, dt*.6);
+  // fresh air dilutes what the return-air sensor sees
+  s.nh3m = Math.max(0, s.nh3*(1.1 - .4*s.f) + noise()*Math.min(3, s.nh3*.01));
   s.tRet = tRet; s.tExh = tRet - 0.8;
   s.energy += FAN_KW*(s.fan/100)**3*dt;
   // stage transitions
@@ -808,10 +822,10 @@ function step(dt){
         (s.stage===1 && m>=58.3) ||
         (s.stage===2 && s.inBand>=8) ||
         (s.stage===3 && ((ts>=7 && m<=50.3) || ts>=10)) ||
-        (s.stage===4 && ts>=72) ||
+        (s.stage===4 && ((ts>=72 && (SC.nh3 || s.nh3m <= NH3_LIMIT)) || ts>=76)) ||
         (s.stage===5 && ((ts>=8 && m<=27) || ts>=10))) advance();
   }
-  collectAlarms(ts);
+  collectAlarms(s.t - s.stageStart);   // after a transition the new stage's clock applies
 }
 
 function collectAlarms(ts){
@@ -822,6 +836,9 @@ function collectAlarms(ts){
   if (SC.damper) add('damper','warn',`Taze hava damperi yanıt vermiyor (komut açık, konum %0)`,'Fan devri +%15 · O2 izleniyor · damper aktüatörü kontrol edilmeli');
   if (SC.clog && s.fan > 1) add('clog','warn',`P_INLET yüksek (${fmt(FAN_PA*1.6*(s.fan/100)**2,0)} Pa), debi %40 düşük`,'Fan devri +%20 · spigot temizleme kapakları kontrol edilmeli');
   if (SC.tin) add('tin','warn','T_INLET sinyali yok (4–20 mA kopuk)','İnlet sıcaklığı damper konumu ve dönüş havasından tahmin ediliyor');
+  if (SC.nh3) add('nh3s','warn','NH₃ sensörü arızası: dönüş havasında ölçüm yok','Kondisyonlama bitişi süreye göre (72 sa) · Dräger tüp ile elle ölçüm önerilir');
+  if (s.stage === 4 && ts >= 72 && !SC.nh3 && s.nh3m > NH3_LIMIT) add('nh3','warn',`NH₃ hâlâ ${fmt(s.nh3m,0)} ppm (sınır ${NH3_LIMIT} ppm)`,'Kondisyonlama uzatılıyor · en geç 76 saatte biter');
+  if (s.nh3Note && s.t - s.nh3Note.t < 2) add('nh3end','warn',`Kondisyonlama 76 saatte NH₃ ${fmt(s.nh3Note.v,0)} ppm ile bitti`,'Parti spawning öncesi kontrol edilmeli (koku, Dräger tüp)');
   if (SC.door && s.stage < 6) add('door','warn','Tünel kapısı açık','Etap saati bekletiliyor · fan %30’a düşürüldü');
   s.valid.forEach((v,i)=>{ if(!v) add('probe'+i,'warn',`T_COMP_${i+1} sapmalı (${fmt(s.probes[i])} °C)`,'Ortalamadan hariç tutuldu · kalan problardan hesaplanıyor'); });
   if (s.stage < 6){
@@ -861,12 +878,12 @@ function flag(id, on){ $('g-'+id).classList.toggle('alarm', !hide && !!on); }
 function render(){
   const H = hide, S = STAGES[s.stage], ts = s.t - s.stageStart, running = s.fan > 0.5;
   const qf = SC.clog ? .6 : 1, pf = SC.clog ? 1.6 : 1;
-  setV('v-tret', s.tRet, '°C'); setV('v-o2', s.o2, '% O₂'); setV('v-texh', s.tExh, '°C');
+  setV('v-tret', s.tRet, '°C'); setV('v-o2', s.o2, '% O₂'); setV('v-nh3', SC.nh3 ? 'HATA' : s.nh3m, SC.nh3 ? '' : 'ppm', 0); setV('v-texh', s.tExh, '°C');
   setV('v-rdamp', (1-s.f)*100, '%', 0); setV('v-fdamp', s.f*100, '%', 0); setV('v-fan', s.fan, '%', 0);
   setV('v-tout', s.tOut, '°C'); setV('v-rh', s.rhOut, '%RH', 0);
   setV('v-tin', SC.tin ? 'HATA' : s.tIn, SC.tin ? '' : '°C'); setV('v-pin', FAN_PA*pf*(s.fan/100)**2, 'Pa', 0);
   flag('v-fan', SC.fan || SC.power); flag('v-fdamp', SC.damper || SC.power); flag('v-rdamp', SC.power);
-  flag('v-tin', SC.tin); flag('v-pin', SC.clog && running); flag('v-o2', s.stage < 6 && s.o2 < 12);
+  flag('v-tin', SC.tin); flag('v-pin', SC.clog && running); flag('v-o2', s.stage < 6 && s.o2 < 12); flag('v-nh3', !!SC.nh3 || (s.stage === 4 && ts >= 72 && s.nh3m > NH3_LIMIT));
   s.probes.forEach((p,i)=>{ setV('v-tc'+i, p, '°C'); $('g-v-tc'+i).classList.toggle('dev', !H && !s.valid[i]); });
   setV('v-hedef', s.stage===6 ? null : s.spComp, '°C'); setV('v-anlik', s.mAvg, '°C');
   $('bladeFresh').setAttribute('transform', `rotate(${(H?0:s.f*90).toFixed(1)} 255 420)`);
@@ -911,7 +928,7 @@ function render(){
     case 1: v = `Ort. ${fmt(s.mAvg)} / 58,3 °C`; break;
     case 2: v = `Bant içi ${short(s.inBand)} / 8 sa`; met = s.inBand >= 8; break;
     case 3: v = `${short(ts)} / 7 sa · Ort. ${fmt(s.mAvg)} °C`; break;
-    case 4: v = `${short(ts)} / 72 sa`; break;
+    case 4: v = `${short(ts)} / 72 sa · NH₃ ${SC.nh3 ? 'HATA' : fmt(s.nh3m,0)} / ${NH3_LIMIT} ppm`; met = ts >= 72 && (!!SC.nh3 || s.nh3m <= NH3_LIMIT); break;
     case 5: v = `${short(ts)} / 8 sa · Ort. ${fmt(s.mAvg)} °C`; break;
     default: v = 'Çevrim tamamlandı'; met = true;
   }
@@ -1019,7 +1036,7 @@ else mqMobile.addListener(() => { placePanel(); render(); });
 placePanel();
 // The diagram's values, repeated as a readable grid under it on phones.
 const MS = [['FAN ORANI','v-fan'],['TAZE HAVA DAMPERİ','v-fdamp'],['GERİ DÖNÜŞ DAMPERİ','v-rdamp'],['T_INLET','v-tin'],['P_INLET','v-pin'],
-  ['T_RETURN','v-tret'],['O2_RETURN','v-o2'],['T_EXHAUST','v-texh'],['T_OUTSIDE','v-tout'],['RH_OUTSIDE','v-rh'],
+  ['T_RETURN','v-tret'],['O2_RETURN','v-o2'],['NH₃_RETURN','v-nh3'],['T_EXHAUST','v-texh'],['T_OUTSIDE','v-tout'],['RH_OUTSIDE','v-rh'],
   ['T_COMP_1','v-tc0'],['T_COMP_2','v-tc1'],['T_COMP_3','v-tc2'],['T_COMP_4','v-tc3'],['HEDEF KOMPOST','v-hedef'],['ANLIK ORTALAMA','v-anlik']];
 $('msens').innerHTML = MS.map(([l,id]) => `<div class="ms" id="ms-${id}"><span>${l}</span><b></b></div>`).join('');
 function renderMobile(){

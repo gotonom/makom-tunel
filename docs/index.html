@@ -10,14 +10,14 @@
 <meta property="og:title" content="MAKOM Kontrol Merkezi">
 <meta property="og:description" content="3 bunker, 4 tünel ve 20 üretim odası tek ekranda: canlı saha planı, üretim takvimi, enerji ve alarmlar. Created by GOTONOM.">
 <meta property="og:url" content="https://makom-tunel-production.up.railway.app/">
-<meta property="og:image" content="https://makom-tunel-production.up.railway.app/og/index.png?v=2">
+<meta property="og:image" content="https://makom-tunel-production.up.railway.app/og/index.png?v=3">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="MAKOM Kontrol Merkezi">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="MAKOM Kontrol Merkezi">
 <meta name="twitter:description" content="3 bunker, 4 tünel ve 20 üretim odası tek ekranda: canlı saha planı, üretim takvimi, enerji ve alarmlar. Created by GOTONOM.">
-<meta name="twitter:image" content="https://makom-tunel-production.up.railway.app/og/index.png?v=2">
+<meta name="twitter:image" content="https://makom-tunel-production.up.railway.app/og/index.png?v=3">
 <meta name="theme-color" content="#0a2463">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a2463'/%3E%3Cpath d='M7 23V9l9 8 9-8v14' fill='none' stroke='%23fff' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;-webkit-text-size-adjust:100%}img{max-width:100%}[hidden]{display:none!important}</style>
@@ -381,7 +381,7 @@ function bunkerVals(p, t){
 }
 const TFAN = [30,55,50,58,68,55,85,0];
 function tunnelVals(p, t){
-  if (p.idle) return { T:null, fan:false, kw:0, avgKw:0, f:0 };
+  if (p.idle) return { T:null, fan:false, kw:0, avgKw:0, f:0, nh3:null };
   const L = p.ls; let T;
   switch (p.si){
     case 0: T = 52; break; case 1: T = 48.5; break;
@@ -390,8 +390,10 @@ function tunnelVals(p, t){
     case 6: T = Math.max(25, 49.3 - 3*L); break; default: T = 25;
   }
   T += 0.25*wob(t, p.i + 3);
+  // return-air ammonia: peaks in pasteurization, converted during conditioning (ends ≤ 10 ppm)
+  const nh3 = [150, 180, 180 + 150*Math.min(L/7.5, 1), 450, 450 - 120*Math.min(L/7.5, 1), 330*Math.exp(-L/18), 3, 1][p.si] * (1 + 0.03*wob(t, p.i + 7));
   const f = TFAN[p.si]/100;
-  return { T, fan: f > 0, kw: SPEC.tunnelKw*f**3, avgKw: SPEC.tunnelKw*f**3, f };
+  return { T, fan: f > 0, kw: SPEC.tunnelKw*f**3, avgKw: SPEC.tunnelKw*f**3, f, nh3 };
 }
 const RT = [22.5,22,22,16.5,17,17.5,17,null], RC = [6000,4000,3500,900,900,1200,900,600], RH = [95,95,95,91,87,91,87,55], RF = [40,45,45,65,70,55,70,80];
 function roomVals(p, t){
@@ -691,7 +693,7 @@ function renderDrawer(t){
   setT('dProgR', `${dur(p.ls)} / ${dur(p.sEnd - p.sStart)}`);
   $('dProg').style.width = clamp(p.ls/(p.sEnd - p.sStart)*100, 0, 100) + '%'; $('dProg').style.background = p.st.c;
   const cells = u.k === 'b' ? [['Ort. sıcaklık', fmt(v.T), '°C'], ['Fan', v.fan ? `ÇALIŞIYOR` : 'BEKLEMEDE', ''], ['O₂', fmt(v.o2), '%'], [v.fan ? 'Kalan çalışma' : 'Sonraki çalışma', dur(v.left/60), '']]
-    : u.k === 't' ? [['Kompost', p.idle ? '—' : fmt(v.T), '°C'], ['Fan', fmt(v.f*100,0), '%'], ['Fan gücü', fmt(v.kw,1), 'kW'], ['Etap sonu', dur(p.sEnd - t), '']]
+    : u.k === 't' ? [['Kompost', p.idle ? '—' : fmt(v.T), '°C'], ['NH₃ dönüş havası', p.idle ? '—' : fmt(v.nh3,0), 'ppm'], ['Fan', `${fmt(v.f*100,0)} %`, `${fmt(v.kw,1)} kW`], ['Etap sonu', dur(p.sEnd - t), '']]
     : [['Oda sıcaklığı', p.idle ? '—' : fmt(v.T), '°C'], ['CO₂', p.idle ? '—' : fmt(v.co2,0), 'ppm'], ['Bağıl nem', p.idle ? '—' : fmt(v.rh,0), '%'], ['Döngü günü', p.idle ? '—' : `${v.day} / 52`, '']];
   $('dGrid').innerHTML = cells.map(([l, val, un]) => `<div class="dm"><span>${l}</span><b class="num">${val} <small>${un}</small></b></div>`).join('');
   const hs = Array.from({length:97}, (_,k) => vals(u, t - 24 + k/4).v.T), ok = hs.filter(h => h != null), mx = Math.max(...ok) + 1, mn = Math.min(...ok) - 1;
